@@ -1,211 +1,235 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {OBJLoader} from 'three/addons/loaders/OBJLoader.js';
-import {MTLLoader} from 'three/addons/loaders/MTLLoader.js';
 
 const sceneBox = document.getElementById('scene');
-const tools = document.getElementById('layoutTools');
-const picker = document.getElementById('layoutFurniture');
-const turn = document.getElementById('layoutTurn');
-const message = document.getElementById('layoutMessage');
-const defaultSlots = [
-  [-3.7,-3.7], [3.7,-3.7], [1.25,-1.1], [-3.8,0],
-  [-1.4,-3.15], [0.05,-0.7], [1.5,-3.8], [1.8,3.6],
-  [3.55,0.85], [-3.1,2.55], [-0.65,3.65], [3.75,3.7]
-];
-const placementKey = 'gyoukan-marathon-layout-v1';
-let layouts = {};
-try {
-  const saved = JSON.parse(localStorage.getItem(placementKey) || '{}');
-  if (saved && typeof saved === 'object' && !Array.isArray(saved)) layouts = saved;
-} catch {
-  message.textContent = '配置を読み込めませんでした。';
-}
+const stageMessage = document.getElementById('roomMode');
 
 function start() {
-  const renderer = new THREE.WebGLRenderer({antialias:true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-  renderer.domElement.setAttribute('aria-hidden', 'true');
+  const renderer = new THREE.WebGLRenderer({antialias: true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+  const surface = renderer.domElement;
+  surface.setAttribute('role', 'img');
+  surface.setAttribute('aria-label', '猫が歩き回る3Dの部屋');
   const world = new THREE.Scene();
-  world.background = new THREE.Color('#dcefe9');
-  const view = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-  view.position.set(12, 11, 14);
-  const orbit = new OrbitControls(view, renderer.domElement);
-  orbit.target.set(0, .65, 0);
-  orbit.minDistance = 11;
-  orbit.maxDistance = 30;
-  orbit.minPolarAngle = .25;
-  orbit.maxPolarAngle = 1.26;
+  world.background = new THREE.Color('#d9eddf');
+  const camera = new THREE.PerspectiveCamera(39, 1, .1, 100);
+  camera.position.set(9, 7, 11);
+  const orbit = new OrbitControls(camera, surface);
+  orbit.target.set(0, .35, 0);
   orbit.enablePan = false;
-  world.add(new THREE.HemisphereLight('#fff8ee', '#92aaa1', 2.1));
-  const sun = new THREE.DirectionalLight('#fff4dc', 2);
-  sun.position.set(4, 8, 2);
+  orbit.minDistance = 7;
+  orbit.maxDistance = 24;
+  orbit.minPolarAngle = .3;
+  orbit.maxPolarAngle = 1.34;
+  orbit.update();
+  orbit.saveState();
+  world.add(new THREE.HemisphereLight('#fff9ec', '#b3b4b0', 2.1));
+  const sun = new THREE.DirectionalLight('#fff4dd', 2);
+  sun.position.set(4, 8, 5);
   world.add(sun);
 
-  function box(w,h,d,color,x,y,z) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color}));
-    mesh.position.set(x,y,z);
-    world.add(mesh);
-    return mesh;
+  function mesh(parent, geometry, color, x, y, z) {
+    const part = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({color, roughness: .88}));
+    part.position.set(x, y, z);
+    parent.add(part);
+    return part;
   }
-  box(10.2,.35,10.2,'#9e6446',0,-.19,0);
+  function box(parent, color, x, y, z, width, height, depth) {
+    return mesh(parent, new THREE.BoxGeometry(width, height, depth), color, x, y, z);
+  }
+  const sphere = new THREE.SphereGeometry(1, 24, 16);
+  function oval(parent, color, x, y, z, sx, sy, sz) {
+    const part = mesh(parent, sphere, color, x, y, z);
+    part.scale.set(sx, sy, sz);
+    return part;
+  }
+
+  box(world, '#9d674b', 0, -.18, 0, 8.6, .28, 8.6);
   for (let i = 0; i < 12; i++) {
-    box(10,.07,.83,i % 2 ? '#deb28b' : '#e6bb96',0,-.035,(i - 5.5) * .833);
+    box(world, i % 2 ? '#e3b287' : '#edbf96', 0, -.027, (i - 5.5) * .7, 8.4, .05, .696);
   }
-  const rear = box(10,2.7,.15,'#ffe3bd',0,1.35,-5);
-  const left = box(.15,2.7,10,'#f4d1a6',-5,1.35,0);
-  const floor = new THREE.Plane(new THREE.Vector3(0,1,0),0);
-  const ray = new THREE.Raycaster();
-  const indicator = new THREE.Mesh(new THREE.RingGeometry(.38,.46,36),
-    new THREE.MeshBasicMaterial({color:'#18805e',side:THREE.DoubleSide}));
-  indicator.rotation.x = -Math.PI / 2;
-  world.add(indicator);
+  const rear = new THREE.Group();
+  const left = new THREE.Group();
+  world.add(rear, left);
+  box(rear, '#fff0d9', 0, 1.38, -4.2, 8.4, 2.76, .15);
+  box(left, '#f1d4af', -4.2, 1.38, 0, .15, 2.76, 8.4);
+  box(rear, '#cb9673', 0, .11, -4.09, 8.4, .22, .09);
+  box(left, '#cb9673', -4.09, .11, 0, .09, .22, 8.4);
+  box(rear, '#a6dfe5', .6, 1.65, -4.105, 2.5, 1.43, .1);
+  for (const x of [-.65, .6, 1.85]) box(rear, '#faf5e3', x, 1.65, -4.03, .08, 1.51, .09);
+  for (const y of [.91, 1.65, 2.39]) box(rear, '#faf5e3', .6, y, -4.03, 2.56, .08, .09);
+  oval(world, '#679d8d', 0, .006, .48, 2.6, .018, 1.9);
+  oval(world, '#8fb9a7', 0, .012, .48, 2.43, .018, 1.73);
 
-  const cache = new Map();
-  const pieces = new THREE.Group();
-  world.add(pieces);
-  let current = {index: 0, items: []};
-  let selected = '';
-  let generation = 0;
-
-  function render() {
-    rear.visible = view.position.z > -5;
-    left.visible = view.position.x > -5;
-    const model = pieces.children.find(piece => piece.name === selected);
-    indicator.visible = Boolean(model);
-    if (model) indicator.position.set(model.position.x,.012,model.position.z);
-    renderer.render(world, view);
-  }
-  orbit.addEventListener('change', render);
-
-  function loadModel(key) {
-    if (!cache.has(key)) {
-      const folder = new URL('furniture/Models/', document.baseURI).href;
-      const promise = new MTLLoader().setPath(folder).loadAsync(key + '.mtl').then(materials => {
-        materials.preload();
-        return new OBJLoader().setPath(folder).setMaterials(materials).loadAsync(key + '.obj');
-      }).then(model => {
-        const bounds = new THREE.Box3().setFromObject(model);
-        const center = bounds.getCenter(new THREE.Vector3());
-        model.position.set(-center.x, -bounds.min.y, -center.z);
-        const root = new THREE.Group();
-        root.add(model);
-        root.scale.setScalar(.25);
-        return root;
-      }).catch(error => {
-        cache.delete(key);
-        throw error;
-      });
-      cache.set(key,promise);
-    }
-    return cache.get(key);
-  }
-
-  function placement(key, index) {
-    const saved = layouts[current.index + '/' + key];
-    if (Array.isArray(saved) && saved.length === 3 && saved.every(Number.isFinite)) {
-      return [THREE.MathUtils.clamp(saved[0],-4,4),THREE.MathUtils.clamp(saved[1],-4,4),saved[2] % 4];
-    }
-    return [...defaultSlots[index],0];
-  }
-  function apply(model, pose) {
-    const [x,z,quarterTurns] = pose;
-    model.position.set(x,0,z);
-    model.rotation.y = quarterTurns * Math.PI / 2;
-  }
-  function selection(key) {
-    selected = key;
-    picker.value = key;
-    const enabled = pieces.children.some(piece => piece.name === key);
-    turn.disabled = !enabled;
-    message.textContent = enabled ? '床をクリック・タップして、選んだ家具を置きます。' : '';
-    render();
-  }
-  function save(model, pose) {
-    const next = {...layouts, [current.index + '/' + model.name]:pose};
-    try {
-      localStorage.setItem(placementKey, JSON.stringify(next));
-      layouts = next;
-      apply(model,pose);
-      message.textContent = '配置を保存しました。';
-      render();
-    } catch {
-      message.textContent = '配置を保存できませんでした。';
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 36),
+    new THREE.MeshBasicMaterial({color: '#654636', opacity: .19, transparent: true, depthWrite: false}));
+  shadow.rotation.x = -Math.PI / 2;
+  world.add(shadow);
+  const cat = new THREE.Group();
+  const body = new THREE.Group();
+  world.add(cat);
+  cat.add(body);
+  const ginger = '#df8645';
+  const stripe = '#a94f2b';
+  const cream = '#fff2d9';
+  oval(body, ginger, 0, .59, -.18, .37, .35, .65);
+  oval(body, cream, 0, .44, .27, .29, .25, .27);
+  const head = new THREE.Group();
+  head.position.set(0, .93, .47);
+  body.add(head);
+  oval(head, ginger, 0, 0, 0, .46, .39, .37);
+  const eyes = [];
+  for (const side of [-1, 1]) {
+    const ear = mesh(head, new THREE.ConeGeometry(.19, .43, 4), ginger, side * .28, .34, -.045);
+    ear.rotation.y = Math.PI / 4;
+    ear.rotation.z = -side * .17;
+    const inner = mesh(head, new THREE.ConeGeometry(.105, .25, 4), '#eeaca1', side * .30, .35, .043);
+    inner.rotation.copy(ear.rotation);
+    oval(head, cream, side * .13, -.13, .30, .19, .12, .089);
+    const eye = new THREE.Group();
+    eye.position.set(side * .185, .04, .327);
+    head.add(eye);
+    eyes.push(eye);
+    oval(eye, '#304136', 0, 0, 0, .057, .078, .027);
+    oval(eye, '#ffffff', -.016, .025, .025, .016, .018, .009);
+    for (let i=0; i<2; i++) {
+      const whisker = oval(head, '#845f48', side * .34, -.115 - i * .052, .30, .20, .009, .009);
+      whisker.rotation.z = side * (.12 - i * .20);
     }
   }
-  picker.addEventListener('change', () => selection(picker.value));
-  turn.addEventListener('click', () => {
-    const model = pieces.children.find(piece => piece.name === selected);
-    if (model) save(model,[model.position.x,model.position.z,(Math.round(model.rotation.y / (Math.PI / 2)) + 1) % 4]);
-  });
+  oval(head, '#ae5f58', 0, -.09, .391, .065, .044, .028);
+  for (const x of [-.1, 0, .1]) {
+    const mark = oval(head, stripe, x, .275, .245, .024, .068, .016);
+    mark.rotation.x = -.48;
+  }
+  const legs = [];
+  for (const z of [-.55, .23]) {
+    for (const side of [-1, 1]) {
+      const joint = new THREE.Group();
+      joint.position.set(side * .24, .45, z);
+      body.add(joint);
+      oval(joint, ginger, 0, -.16, 0, .108, .23, .12);
+      oval(joint, cream, 0, -.345, .04, .12, .084, .154);
+      legs.push(joint);
+    }
+  }
+  const tail = new THREE.Group();
+  tail.position.set(0, .64, -.67);
+  body.add(tail);
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0,0,0), new THREE.Vector3(0,.22,-.29),
+    new THREE.Vector3(.05,.58,-.47), new THREE.Vector3(.22,.72,-.59)
+  ]);
+  mesh(tail, new THREE.TubeGeometry(curve, 20, .074, 10, false), ginger, 0, 0, 0);
+  const tip = curve.getPoint(1);
+  oval(tail, cream, tip.x, tip.y, tip.z, .078, .078, .078);
 
-  let press;
-  renderer.domElement.addEventListener('pointerdown', event => {
-    press = event.isPrimary && event.button === 0 ? [event.pointerId,event.clientX,event.clientY] : undefined;
-  });
-  renderer.domElement.addEventListener('pointercancel', () => { press = undefined; });
-  renderer.domElement.addEventListener('pointerup', event => {
-    const tap = press;
-    press = undefined;
-    if (!tap || tap[0] !== event.pointerId || Math.hypot(tap[1]-event.clientX,tap[2]-event.clientY) > 7) return;
-    const rect = renderer.domElement.getBoundingClientRect();
-    ray.setFromCamera(new THREE.Vector2((event.clientX-rect.left)/rect.width*2-1,1-(event.clientY-rect.top)/rect.height*2),view);
-    const model = pieces.children.find(piece => piece.name === selected);
-    const target = ray.ray.intersectPlane(floor,new THREE.Vector3());
-    if (model && target && Math.abs(target.x) <= 5 && Math.abs(target.z) <= 5) {
-      save(model,[THREE.MathUtils.clamp(target.x,-4,4),THREE.MathUtils.clamp(target.z,-4,4),Math.round(model.rotation.y / (Math.PI / 2))]);
-    } else if (!selected) {
-      const hit = ray.intersectObjects(pieces.children,true)[0];
-      if (hit) {
-        let piece = hit.object;
-        while (piece.parent !== pieces) piece = piece.parent;
-        selection(piece.name);
+  let target = new THREE.Vector3(1.9, 0, .9);
+  let pause = 0;
+  let time = 0;
+  let gait = 0;
+  let size = .74;
+  let desiredSize = size;
+  let heading = .5;
+  let lastFrame = null;
+  let frame = 0;
+  let visible = true;
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const toggle = document.getElementById('catMotion');
+  let moving = !motion.matches;
+  const draw = () => {
+    rear.visible = camera.position.z > -4;
+    left.visible = camera.position.x > -4;
+    renderer.render(world, camera);
+  };
+  function animate(now) {
+    frame = 0;
+    const dt = Math.min((now - (lastFrame ?? now)) / 1000, .05);
+    lastFrame = now;
+    if (moving) {
+      time += dt;
+      const dx = target.x - cat.position.x;
+      const dz = target.z - cat.position.z;
+      const distance = Math.hypot(dx,dz);
+      let walking = 0;
+      if (distance > .1) {
+        const angle = Math.atan2(dx,dz);
+        heading += Math.atan2(Math.sin(angle-heading), Math.cos(angle-heading)) * Math.min(1,dt*6);
+        const step = Math.min(distance,dt*.97);
+        cat.position.x += Math.sin(heading) * step;
+        cat.position.z += Math.cos(heading) * step;
+        gait += dt * 10;
+        walking = 1;
+      } else {
+        pause += dt;
+        if (pause > 1.35) {
+          const x = (Math.random() - .5) * 5;
+          const z = (Math.random() - .5) * 5;
+          if (Math.hypot(x - cat.position.x, z - cat.position.z) > 1.4) {
+            target.set(x,0,z);
+            pause = 0;
+          }
+        }
       }
-    }
-  });
-  document.getElementById('layoutReset').addEventListener('click', () => orbit.reset());
-  sceneBox.append(renderer.domElement);
-  sceneBox.classList.add('room-3d');
-  tools.hidden = false;
-  new ResizeObserver(() => {
-    const {clientWidth:w,clientHeight:h} = sceneBox;
-    if (!w || !h) return;
-    renderer.setSize(w,h,false);
-    view.aspect = w / h;
-    view.updateProjectionMatrix();
-    render();
-  }).observe(sceneBox);
-
-  document.addEventListener('marathon-room-update', async ({detail}) => {
-    if (detail.index === current.index && detail.items.length === current.items.length && generation) return;
-    const request = ++generation;
-    const previouslySelected = detail.index === current.index ? selected : '';
-    current = detail;
-    pieces.clear();
-    picker.replaceChildren(new Option('家具を選ぶ',''), ...detail.items.map(([key,name]) => new Option(name,key)));
-    selection('');
-    try {
-      const models = await Promise.all(detail.items.map(([key]) => loadModel(key)));
-      if (request !== generation) return;
-      models.forEach((original,index) => {
-        const [key] = detail.items[index];
-        const model = original.clone();
-        model.name = key;
-        apply(model,placement(key,index));
-        pieces.add(model);
+      cat.rotation.y = heading;
+      legs.forEach((leg, index) => {
+        const swing = Math.sin(gait + ([0,3].includes(index) ? 0 : Math.PI)) * .42 * walking;
+        leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x,swing,Math.min(1,dt*16));
       });
-      selection(detail.items.some(([key]) => key === previouslySelected) ? previouslySelected : '');
-    } catch {
-      if (request !== generation) return;
-      generation = 0;
-      message.textContent = '家具を読み込めませんでした。ページを再読み込みしてください。';
+      body.position.y = Math.abs(Math.sin(gait)) * .048 * walking;
+      tail.rotation.y = Math.sin(time * 3.2) * .32;
+      head.rotation.y = Math.sin(time * 1.3) * .13 * (1-walking);
+      eyes.forEach(eye => { eye.scale.y = time % 5 > 4.86 ? .16 : 1; });
     }
-  });
-  document.dispatchEvent(new Event('marathon-room-ready'));
-}
+    size = moving ? THREE.MathUtils.lerp(size,desiredSize,Math.min(1,dt*5)) : desiredSize;
+    cat.scale.setScalar(size);
+    shadow.position.set(cat.position.x,.037,cat.position.z);
+    shadow.scale.set(.51*size,.77*size,1);
+    draw();
+    if (moving && visible && !document.hidden) frame = requestAnimationFrame(animate);
+  }
+  function refresh() {
+    if (frame) cancelAnimationFrame(frame);
+    lastFrame = null;
+    animate(performance.now());
+  }
 
+  document.addEventListener('marathon-cat-update', ({detail: laps}) => {
+    desiredSize = .74 + .81 * (laps / (laps + 23));
+    if (!moving || !frame) refresh();
+  });
+  function updateMotionButton() {
+    toggle.textContent = moving ? '動きを止める' : '歩かせる';
+  }
+  toggle.onclick = () => {
+    moving = !moving;
+    updateMotionButton();
+    refresh();
+  };
+  updateMotionButton();
+  document.getElementById('catReset').onclick = () => orbit.reset();
+  orbit.addEventListener('change', draw);
+  sceneBox.append(surface);
+  sceneBox.classList.add('room-3d');
+  document.getElementById('catControls').hidden = false;
+  new ResizeObserver(() => {
+    const {clientWidth: width, clientHeight: height} = sceneBox;
+    if (!width || !height) return;
+    renderer.setSize(width,height,false);
+    camera.aspect = width/height;
+    camera.updateProjectionMatrix();
+    draw();
+  }).observe(sceneBox);
+  new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+    refresh();
+  }).observe(sceneBox);
+  document.addEventListener('visibilitychange', refresh);
+  document.dispatchEvent(new Event('marathon-cat-ready'));
+  refresh();
+}
 try {
   start();
 } catch {
-  document.getElementById('roomMode').textContent = 'この端末では2Dで表示しています。';
+  stageMessage.textContent = 'この端末では3D表示を利用できません。周回を記録すると猫は育ちます。';
 }
