@@ -302,6 +302,8 @@ function start() {
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const toggle = document.getElementById('catMotion');
   let moving = !motion.matches;
+  let following = false;
+  const cameraShift = new THREE.Vector3();
   const draw = () => {
     rear.visible = camera.position.z > -edge;
     left.visible = camera.position.x > -edge;
@@ -382,6 +384,11 @@ function start() {
     cat.scale.setScalar(size);
     shadow.position.set(cat.position.x,.037,cat.position.z);
     shadow.scale.set(.51*size,.77*size,1);
+    if (following) {
+      cameraShift.set(cat.position.x - orbit.target.x, 0, cat.position.z - orbit.target.z);
+      camera.position.add(cameraShift);
+      orbit.target.add(cameraShift);
+    }
     draw();
     if (moving && visible && !document.hidden) frame = requestAnimationFrame(animate);
   }
@@ -417,7 +424,18 @@ function start() {
     refresh();
   };
   updateMotionButton();
-  document.getElementById('catReset').onclick = () => orbit.reset();
+  document.getElementById('catFocus').onclick = () => {
+    const offset = new THREE.Vector3().subVectors(camera.position,orbit.target).setLength(7.4);
+    orbit.target.set(cat.position.x,.65,cat.position.z);
+    camera.position.copy(orbit.target).add(offset);
+    following = true;
+    orbit.update();
+    draw();
+  };
+  document.getElementById('catReset').onclick = () => {
+    following = false;
+    orbit.reset();
+  };
   orbit.addEventListener('change', draw);
   sceneBox.append(surface);
   sceneBox.classList.add('room-3d');
