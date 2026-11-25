@@ -28,6 +28,11 @@ button{border:0;border-radius:12px;background:#a0f1db;color:#123b35;padding:11px
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reward-pop{animation:none}}
 @media print{@page{size:A4 landscape;margin:8mm}body{background:white}main,section{max-width:none;margin:0;padding:0;border:0;box-shadow:none}header,nav,section:not(#certificate),h2,form,#actions{display:none!important}#certificate canvas{margin:0;max-height:190mm;object-fit:contain;border-radius:0;box-shadow:none}}
 
+body{padding-bottom:52px}.teacher-open{position:fixed;bottom:max(12px,env(safe-area-inset-bottom));right:max(12px,env(safe-area-inset-right));z-index:4;border:1px solid #7586bd;box-shadow:0 3px 10px #080e2590;font-size:.85rem}
+#teacherDialog{width:min(430px,calc(100% - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:1px solid #7586bd;border-radius:18px;background:#1b2444;color:#f8f5ff;padding:18px;box-shadow:0 12px 40px #080e25}
+#teacherDialog::backdrop{background:#080e25b8}.teacher-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.teacher-heading h2{margin:0}.teacher-form{display:grid;gap:10px}.teacher-form label{font-weight:700}.teacher-help{margin:0;color:#e6defb;font-size:.9rem}#teacherStatus{margin:12px 0 0;color:#ffe09b}#teacherStatus:empty{display:none}
+@media print{body{padding:0}.teacher-open,#teacherDialog{display:none!important}}
+
 </style>
 <main>
 <header class="game-header">
@@ -73,7 +78,22 @@ button{border:0;border-radius:12px;background:#a0f1db;color:#123b35;padding:11px
 <p id="shopStatus" role="status"></p></section>
 
 <section id="certificate"><h2>賞状を作る</h2><form id="form"><div class="row"><label>名前<input id="student" maxlength="30" required></label><label>開始日<input id="start" type="date" required></label><label>終了日<input id="end" type="date" required></label><button>賞状を表示</button></div><p id="message" role="status"></p></form>
-<div id="preview" hidden><canvas id="award" width="2480" height="1754" role="img"></canvas><div id="actions"><div class="row"><button id="copy">賞状の画像をコピー</button><button id="print">印刷する</button></div><p id="copyStatus" role="status"></p><p>ロイロノートに提出するときは、コピーした画像をノートに貼り付けてから提出してください。</p></div></div></section></main>
+<div id="preview" hidden><canvas id="award" width="2480" height="1754" role="img"></canvas><div id="actions"><div class="row"><button id="copy">賞状の画像をコピー</button><button id="print">印刷する</button></div><p id="copyStatus" role="status"></p><p>ロイロノートに提出するときは、コピーした画像をノートに貼り付けてから提出してください。</p></div></div></section><button id="teacherOpen" class="quiet teacher-open" aria-haspopup="dialog">先生メニュー</button>
+<dialog id="teacherDialog" aria-labelledby="teacherTitle">
+<div class="teacher-heading"><h2 id="teacherTitle">先生メニュー</h2><button type="button" id="teacherClose" class="quiet">閉じる</button></div>
+<form id="teacherGate" class="teacher-form">
+<label>PINコード<input id="teacherPin" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" required></label>
+<button>開く</button>
+</form>
+<form id="teacherEdit" class="teacher-form" hidden>
+<label>修正する日<select id="teacherDay" required></select></label>
+<label>修正後の周回数<input id="teacherLaps" type="number" inputmode="numeric" min="0" max="12" step="1" required></label>
+<p class="teacher-help">0〜12周。1周につき残高が10コイン増減します。</p>
+<button id="teacherSave">修正を保存する</button>
+</form>
+<p id="teacherStatus" role="status"></p>
+</dialog>
+</main>
 <script>
 const el = id => document.getElementById(id);
 const storageKey = 'gyoukan-marathon-v1';
@@ -84,7 +104,7 @@ const sum = days => days.reduce((total, day) => total + records[day], 0);
 function readRecords() {
   const stored = JSON.parse(localStorage.getItem(storageKey) || '{}');
   return Object.fromEntries(Object.entries(stored).filter(([day, laps]) =>
-    /^\d{4}-\d{2}-\d{2}$/.test(day) && Number.isSafeInteger(laps) && laps > 0));
+    /^\d{4}-\d{2}-\d{2}$/.test(day) && Number.isSafeInteger(laps) && laps >= 0));
 }
 let records = {};
 let recordsReadable = true;
@@ -293,7 +313,7 @@ function render() {
   }
   el('today').dateTime = day;
   el('today').textContent = dateText(day);
-  const confirmed = Boolean(records[day]);
+  const confirmed = Object.hasOwn(records,day);
   el('runForm').hidden = confirmed;
   el('confirmedRun').hidden = !confirmed;
   el('count').textContent = confirmed ? records[day] : '';
@@ -313,6 +333,15 @@ function hidePreview() {
   el('copyStatus').textContent = '';
   el('message').textContent = '';
 }
+function withRecordsLock(callback) {
+  return navigator.locks ? navigator.locks.request(storageKey, callback) : callback();
+}
+function writeLap(day,laps) {
+  const updated = {...records, [day]:laps};
+  localStorage.setItem(storageKey, JSON.stringify(updated));
+  records = updated;
+}
+
 function confirmRun(day, laps) {
   refreshRecords();
   if (!recordsReadable) return;
@@ -320,18 +349,16 @@ function confirmRun(day, laps) {
     setError('日付が変わりました。今日の周回数を入力してください。');
     return;
   }
-  if (records[day]) {
+  if (Object.hasOwn(records,day)) {
     setError('');
     return;
   }
-  const updated = {...records, [day]:laps};
   try {
-    localStorage.setItem(storageKey, JSON.stringify(updated));
+    writeLap(day,laps);
   } catch {
     setError('このブラウザに記録を保存できません。');
     return;
   }
-  records = updated;
   setError('');
   hidePreview();
   el('runReward').textContent = '＋' + laps * 10 + 'コインを受け取りました！';
@@ -345,8 +372,7 @@ el('runForm').onsubmit = async event => {
   confirming = true;
   el('confirmRun').disabled = true;
   try {
-    if (navigator.locks) await navigator.locks.request(storageKey, () => confirmRun(day, laps));
-    else confirmRun(day, laps);
+    await withRecordsLock(() => confirmRun(day, laps));
   } catch {
     setError('確定できませんでした。もう一度お試しください。');
   } finally {
@@ -359,6 +385,93 @@ el('lapInput').oninput = () => {
   el('confirmRun').textContent = Number.isInteger(laps) && laps >= 1 && laps <= 12 ?
     '確定して ' + laps * 10 + ' コインを受け取る' : '確定してコインを受け取る';
 };
+const teacherDialog = el('teacherDialog');
+const teacherStatus = el('teacherStatus');
+let teacherUnlocked = false;
+
+function loadTeacherDays() {
+  refreshRecords();
+  const select = el('teacherDay');
+  const current = select.value;
+  const options = dates().filter(day => day <= today()).reverse();
+  select.replaceChildren(...options.map(day => new Option(dateText(day),day)));
+  if (options.includes(current)) select.value = current;
+  const available = recordsReadable && Boolean(options.length);
+  select.disabled = !available;
+  el('teacherLaps').disabled = !available;
+  el('teacherSave').disabled = !available;
+  el('teacherLaps').value = available ? records[select.value] : '';
+  if (!available) teacherStatus.textContent = recordsReadable ? '修正できる記録はまだありません。' : '記録を読み込めませんでした。';
+}
+el('teacherOpen').onclick = () => {
+  teacherUnlocked = false;
+  el('teacherGate').reset();
+  el('teacherGate').hidden = false;
+  el('teacherEdit').hidden = true;
+  el('teacherDay').replaceChildren();
+  teacherStatus.textContent = '';
+  teacherDialog.showModal();
+  el('teacherPin').focus();
+};
+el('teacherClose').onclick = () => teacherDialog.close();
+teacherDialog.addEventListener('close', () => {
+  teacherUnlocked = false;
+  el('teacherGate').reset();
+});
+el('teacherGate').onsubmit = event => {
+  event.preventDefault();
+  if (el('teacherPin').value !== '0168') {
+    teacherStatus.textContent = 'PINコードが違います。';
+    el('teacherPin').select();
+    return;
+  }
+  teacherUnlocked = true;
+  el('teacherGate').reset();
+  el('teacherGate').hidden = true;
+  el('teacherEdit').hidden = false;
+  teacherStatus.textContent = '';
+  loadTeacherDays();
+  el('teacherDay').focus();
+};
+el('teacherDay').onchange = () => {
+  el('teacherLaps').value = records[el('teacherDay').value];
+  teacherStatus.textContent = '';
+};
+el('teacherEdit').onsubmit = async event => {
+  event.preventDefault();
+  const day = el('teacherDay').value;
+  const laps = el('teacherLaps').valueAsNumber;
+  if (!teacherUnlocked || el('teacherSave').disabled || !Number.isInteger(laps) || laps < 0 || laps > 12) return;
+  el('teacherSave').disabled = true;
+  try {
+    await withRecordsLock(() => {
+      if (!teacherDialog.open || !teacherUnlocked) return;
+      refreshRecords();
+      if (!recordsReadable || day > today() || !Object.hasOwn(records,day)) {
+        teacherStatus.textContent = '修正する記録を読み込めませんでした。';
+        return;
+      }
+      if (laps === records[day]) {
+        teacherStatus.textContent = '周回数に変更はありません。';
+        return;
+      }
+      const previous = records[day];
+      writeLap(day,laps);
+      hidePreview();
+      if (day === today()) el('runReward').textContent = '';
+      const delta = (laps - previous) * 10;
+      teacherStatus.textContent = dateText(day) + 'の記録を' + laps + '周に修正しました（' +
+        (delta > 0 ? '＋' + delta : '−' + Math.abs(delta)) + 'コイン）。';
+      if (balance() < 0) teacherStatus.textContent += '使った分は、今後獲得するコインで差し引かれます。';
+    });
+  } catch {
+    teacherStatus.textContent = '記録を保存できませんでした。';
+  } finally {
+    el('teacherSave').disabled = false;
+    render();
+  }
+};
+
 el('start').value = '2026-12-03';
 el('end').value = '2027-01-26';
 el('print').onclick = () => window.print();
