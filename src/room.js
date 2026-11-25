@@ -15,20 +15,31 @@ function start() {
   const world = new THREE.Scene();
   world.background = new THREE.Color('#596c94');
   const camera = new THREE.PerspectiveCamera(39, 1, .1, 100);
-  camera.position.set(9, 7, 11);
+  camera.position.set(15, 12, 19);
   const orbit = new OrbitControls(camera, surface);
   orbit.target.set(0, .35, 0);
   orbit.enablePan = false;
   orbit.minDistance = 7;
-  orbit.maxDistance = 24;
+  orbit.maxDistance = 43;
   orbit.minPolarAngle = .3;
   orbit.maxPolarAngle = 1.34;
   orbit.update();
   orbit.saveState();
-  world.add(new THREE.HemisphereLight('#fff9ec', '#b3b4b0', 2.1));
-  const sun = new THREE.DirectionalLight('#fff4dd', 2);
-  sun.position.set(4, 8, 5);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.22;
+  world.add(new THREE.HemisphereLight('#fff9ed', '#807b83', 1.55));
+  const sun = new THREE.DirectionalLight('#fff2dc', 2.5);
+  sun.position.set(5, 12, 5);
+  sun.castShadow = true;
+  Object.assign(sun.shadow.camera,{left:-13,right:13,top:13,bottom:-13,near:1,far:33});
+  sun.shadow.mapSize.set(1024,1024);
+  sun.shadow.normalBias = .025;
   world.add(sun);
+  const fill = new THREE.DirectionalLight('#c8e5ff', .55);
+  fill.position.set(-5,4,-6);
+  world.add(fill);
 
   function mesh(parent, geometry, color, x, y, z) {
     const part = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({color, roughness: .88}));
@@ -46,22 +57,48 @@ function start() {
     return part;
   }
 
-  box(world, '#9d674b', 0, -.18, 0, 8.6, .28, 8.6);
-  for (let i = 0; i < 12; i++) {
-    box(world, i % 2 ? '#e3b287' : '#edbf96', 0, -.027, (i - 5.5) * .7, 8.4, .05, .696);
-  }
+  const roomWidth = 16.8;
+  const edge = roomWidth / 2;
+  box(world, '#956447', 0, -.18, 0, roomWidth + .2, .28, roomWidth + .2);
+  const boards = box(world, '#c79b75', 0, -.028, 0, roomWidth, .05, roomWidth);
+  boards.receiveShadow = true;
+  new THREE.TextureLoader().load('art/oak-floor.webp', texture => {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(3,3);
+    texture.anisotropy = Math.min(8,renderer.capabilities.getMaxAnisotropy());
+    boards.material.color.set('#ffffff');
+    boards.material.map = texture;
+    boards.material.needsUpdate = true;
+    draw();
+  });
   const rear = new THREE.Group();
   const left = new THREE.Group();
   world.add(rear, left);
-  box(rear, '#fff0d9', 0, 1.38, -4.2, 8.4, 2.76, .15);
-  box(left, '#f1d4af', -4.2, 1.38, 0, .15, 2.76, 8.4);
-  box(rear, '#cb9673', 0, .11, -4.09, 8.4, .22, .09);
-  box(left, '#cb9673', -4.09, .11, 0, .09, .22, 8.4);
-  box(rear, '#a6dfe5', .6, 1.65, -4.105, 2.5, 1.43, .1);
-  for (const x of [-.65, .6, 1.85]) box(rear, '#faf5e3', x, 1.65, -4.03, .08, 1.51, .09);
-  for (const y of [.91, 1.65, 2.39]) box(rear, '#faf5e3', .6, y, -4.03, 2.56, .08, .09);
-  const rugBorder = oval(world, '#679d8d', 0, .006, .48, 2.6, .018, 1.9);
-  const rugBase = oval(world, '#8fb9a7', 0, .012, .48, 2.43, .018, 1.73);
+  for (const wall of [rear,left]) {
+    if (wall === left) wall.rotation.y = Math.PI / 2;
+    const plaster = box(wall, '#ede0ca', 0, 1.54, -edge, roomWidth, 3.08, .16);
+    plaster.receiveShadow = true;
+    box(wall, '#d4bb9e', 0,.47,-edge+.09,roomWidth,.94,.09);
+    box(wall, '#fff5e4', 0,.95,-edge+.16,roomWidth,.085,.10);
+    box(wall, '#aa7f60', 0,.09,-edge+.15,roomWidth,.18,.13);
+    box(wall, '#fff4dd', 0,3.01,-edge+.13,roomWidth,.12,.09);
+    for (let x = -7.7; x <= 7.8; x += .86) {
+      box(wall,'#bd9e81',x,.50,-edge+.142,.022,.72,.022);
+    }
+  }
+  for (const center of [-4.2,4.2]) {
+    const glass = box(rear,'#a4ccde',center,1.94,-edge+.12,2.8,1.61,.08);
+    glass.material.emissive.set('#7da5c2');
+    glass.material.emissiveIntensity = .32;
+    for (const offset of [-1.44,0,1.44]) box(rear,'#fffaee',center+offset,1.94,-edge+.20,.09,1.7,.14);
+    for (const y of [1.09,1.94,2.79]) box(rear,'#fffaee',center,y,-edge+.20,2.97,.09,.14);
+    box(rear,'#ac815f',center,1.055,-edge+.27,3.14,.10,.28);
+  }
+  const rugBorder = oval(world, '#527d73', 0, .006, .48, 2.6, .018, 1.9);
+  const rugBase = oval(world, '#88aaa0', 0, .012, .48, 2.43, .018, 1.73);
+  rugBase.receiveShadow = true;
+
 
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 36),
     new THREE.MeshBasicMaterial({color: '#654636', opacity: .19, transparent: true, depthWrite: false}));
@@ -135,6 +172,9 @@ function start() {
   }
   const aura = new THREE.Group();
   cat.add(aura);
+  body.traverse(part => {
+    if (part.isMesh) part.castShadow = true;
+  });
   const stars = [];
   const glow = new THREE.MeshBasicMaterial({color:'#ffe386',transparent:true,opacity:.88,depthWrite:false});
   const haloMaterial = new THREE.MeshBasicMaterial({color:'#ffc061',transparent:true,opacity:.64,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending});
@@ -157,6 +197,15 @@ function start() {
     rugRound: [0,.5,0], sideTable: [-2.8,-2.6,0],
     lampRoundFloor: [3,-2.8,0], loungeSofa: [-.3,-3,0]
   };
+  const furnitureNames = {};
+  const outerSlots = [
+    ...[-6.55,-3.95,-1.35,1.35,3.95,6.55].flatMap(x => [[x,-6.62,0],[x,6.62,2]]),
+    ...[-4.2,-1.4,1.4,4.2].flatMap(z => [[-6.65,z,1],[6.65,z,3]]),
+    ...[-4.3,-2.14,0,2.14,4.3].map(x => [x,3.75,2]),
+    [4.7,-.45,3]
+  ];
+  const furnitureBounds = new Map();
+
   const models = new Map();
   const picker = document.getElementById('furnitureSelect');
   const rotateFurniture = document.getElementById('furnitureTurn');
@@ -171,8 +220,9 @@ function start() {
     const model = models.get(id);
     if (!model) return;
     const [x,z,turns] = savedPoses[id] || furnitureSlots[id];
-    model.position.set(x,id === 'rugRound' ? .044 : 0,z);
+    model.position.set(x,id.startsWith('rug') ? .044 : 0,z);
     model.rotation.y = turns * Math.PI / 2;
+    if (!id.startsWith('rug')) furnitureBounds.set(id,new THREE.Box3().setFromObject(model).expandByScalar(.30));
   }
   function updatePicker() {
     document.getElementById('decorate').hidden = !ownedIds.length;
@@ -180,10 +230,6 @@ function start() {
     picker.value = selected;
     rotateFurniture.disabled = !selected;
   }
-  const furnitureNames = {
-    rugRound:'まるいラグ', sideTable:'木のテーブル',
-    lampRoundFloor:'フロアランプ', loungeSofa:'ふかふかソファ'
-  };
   function loadFurniture(id) {
     const folder = new URL('furniture/Models/',document.baseURI).href;
     new MTLLoader().setPath(folder).loadAsync(id + '.mtl')
@@ -193,6 +239,12 @@ function start() {
         const center = bounds.getCenter(new THREE.Vector3());
         model.position.set(-center.x,-bounds.min.y,-center.z);
         const root = new THREE.Group();
+        model.traverse(part => {
+          if (part.isMesh) {
+            part.castShadow = !id.startsWith('rug');
+            part.receiveShadow = true;
+          }
+        });
         root.add(model);
         root.scale.setScalar(.23);
         models.set(id,root);
@@ -232,9 +284,9 @@ function start() {
     const rect = surface.getBoundingClientRect();
     ray.setFromCamera(new THREE.Vector2((event.clientX-rect.left)/rect.width*2-1,1-(event.clientY-rect.top)/rect.height*2),camera);
     const point = ray.ray.intersectPlane(floor,new THREE.Vector3());
-    if (!point || Math.abs(point.x) > 4.2 || Math.abs(point.z) > 4.2) return;
+    if (!point || Math.abs(point.x) > edge || Math.abs(point.z) > edge) return;
     const [, , turns] = savedPoses[selected] || furnitureSlots[selected];
-    place(selected,[THREE.MathUtils.clamp(point.x,-3.25,3.25),THREE.MathUtils.clamp(point.z,-3.25,3.25),turns]);
+    place(selected,[THREE.MathUtils.clamp(point.x,-edge+1,edge-1),THREE.MathUtils.clamp(point.z,-edge+1,edge-1),turns]);
   });
 
   let target = new THREE.Vector3(1.9, 0, .9);
@@ -251,10 +303,33 @@ function start() {
   const toggle = document.getElementById('catMotion');
   let moving = !motion.matches;
   const draw = () => {
-    rear.visible = camera.position.z > -4;
-    left.visible = camera.position.x > -4;
+    rear.visible = camera.position.z > -edge;
+    left.visible = camera.position.x > -edge;
     renderer.render(world, camera);
   };
+  function chooseDestination() {
+    const limit = edge - 1.5;
+    for (let attempt = 0; attempt < 18; attempt++) {
+      const x = (Math.random() * 2 - 1) * limit;
+      const z = (Math.random() * 2 - 1) * limit;
+      const sx = cat.position.x;
+      const sz = cat.position.z;
+      if (Math.hypot(x-sx,z-sz) < 1.7) continue;
+      const blocked = [...furnitureBounds.values()].some(bounds => {
+        const inside = (px,pz) => px >= bounds.min.x && px <= bounds.max.x && pz >= bounds.min.z && pz <= bounds.max.z;
+        if (inside(sx,sz)) return inside(x,z);
+        for (let i = 1; i <= 16; i++) {
+          if (inside(THREE.MathUtils.lerp(sx,x,i/16),THREE.MathUtils.lerp(sz,z,i/16))) return true;
+        }
+        return false;
+      });
+      if (!blocked) {
+        target.set(x,0,z);
+        return;
+      }
+    }
+  }
+
   function animate(now) {
     frame = 0;
     const dt = Math.min((now - (lastFrame ?? now)) / 1000, .05);
@@ -268,20 +343,16 @@ function start() {
       if (distance > .1) {
         const angle = Math.atan2(dx,dz);
         heading += Math.atan2(Math.sin(angle-heading), Math.cos(angle-heading)) * Math.min(1,dt*6);
-        const step = Math.min(distance,dt*.97);
+        const step = Math.min(distance,dt*1.37);
         cat.position.x += Math.sin(heading) * step;
         cat.position.z += Math.cos(heading) * step;
-        gait += dt * 10;
+        gait += dt * 12;
         walking = 1;
       } else {
         pause += dt;
         if (pause > 1.35) {
-          const x = (Math.random() - .5) * 5;
-          const z = (Math.random() - .5) * 5;
-          if (Math.hypot(x - cat.position.x, z - cat.position.z) > 1.4) {
-            target.set(x,0,z);
-            pause = 0;
-          }
+          chooseDestination();
+          pause = 0;
         }
       }
       cat.rotation.y = heading;
@@ -320,11 +391,15 @@ function start() {
     animate(performance.now());
   }
 
-  document.addEventListener('marathon-cat-update', ({detail:{xp,index,owned,poses}}) => {
+  document.addEventListener('marathon-cat-update', ({detail:{xp,index,owned,poses,furniture}}) => {
     evolution = index;
     desiredSize = [.76,.94,1.19,1.42][index] + .3 * (xp / (xp + 25));
     savedPoses = poses;
-    const next = Object.keys(furnitureSlots).filter(id => owned[id]);
+    furniture.forEach(({id,name},i) => {
+      furnitureNames[id] = name;
+      furnitureSlots[id] ??= outerSlots[i - 4];
+    });
+    const next = furniture.filter(item => owned[item.id]).map(item => item.id);
     if (next.length !== ownedIds.length) {
       for (const id of next) if (!ownedIds.includes(id)) loadFurniture(id);
       ownedIds = next;

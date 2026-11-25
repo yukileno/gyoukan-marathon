@@ -24,7 +24,7 @@ button{border:0;border-radius:12px;background:#a0f1db;color:#123b35;padding:11px
 
 .row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.room-heading h2{margin:0 0 12px;overflow-wrap:anywhere}.room-heading button{flex-shrink:0}input,select{display:block;width:100%;max-width:100%;padding:9px;border:1px solid #7586bd;border-radius:9px;font:inherit;color:white;background:#101a36}#nameForm,#decorate{margin:8px 0 12px}#furnitureHint{font-size:.85rem;color:#c7d6fb}
 #scene{position:relative;isolation:isolate;aspect-ratio:1.55;overflow:hidden;border-radius:18px;background:#3f5f70}.cat-placeholder{display:grid;place-items:center;position:absolute;inset:0;font-size:clamp(60px,19vw,123px)}.room-3d .cat-placeholder{display:none}.room-3d canvas{position:absolute;inset:0;width:100%;height:100%;margin:0;touch-action:none;cursor:grab}.room-3d canvas:active{cursor:grabbing}.level-chip{position:absolute;z-index:1;left:9px;top:9px;padding:6px 10px;border-radius:10px;background:#141c37e8;color:#fff;display:grid;line-height:1.2;pointer-events:none}.level-chip span{font-size:.77rem;color:#fbd47c;font-weight:850}.level-chip strong{font-size:.9rem}.growth{margin-top:13px;background:#111a34;border-radius:12px;padding:11px 13px}.growth p{margin:0}.growth progress{width:100%;height:14px;accent-color:#b183ff}#roomMode{margin:.7em 0;color:#c7d6fb;font-size:.85rem}#catStatus,#shopStatus{color:#aef3df;font-weight:800;margin:8px 0 0}#catStatus:empty,#shopStatus:empty{display:none}
-.shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,142px),1fr));gap:9px}.shop-card{padding:12px;border-radius:15px;background:linear-gradient(155deg,#394b77,#282649);border:1px solid #6778a8;display:flex;flex-direction:column;gap:6px}.shop-card p{margin:0;font-size:.83rem;color:#e0e3fa}.shop-card button{margin-top:auto;font-size:.88rem;padding:8px 5px}.item-icon{display:grid;place-items:center;height:48px;font-size:34px}.item-icon img{max-height:48px;max-width:67px}.price{color:#ffe09b;font-size:.85rem;font-weight:750}#certificate canvas{display:block;width:100%;height:auto;margin:14px 0}[hidden]{display:none!important}
+.shop-count{font-size:.8rem;color:#ffe09b;margin-left:4px}.shop-filter{align-items:center;margin:0 0 12px}.shop-filter select{width:auto}#foods .item-icon{height:clamp(76px,15vw,112px);border-radius:10px;background:radial-gradient(ellipse at 50% 55%,#738ed0,#384b80 71%,#29395d 100%)}#foods .item-icon img{max-height:96%;max-width:95%;object-fit:contain;filter:drop-shadow(0 5px 5px #121b39aa)}.shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,142px),1fr));gap:9px}.shop-card{padding:12px;border-radius:15px;background:linear-gradient(155deg,#394b77,#282649);border:1px solid #6778a8;display:flex;flex-direction:column;gap:6px}.shop-card p{margin:0;font-size:.83rem;color:#e0e3fa}.shop-card button{margin-top:auto;font-size:.88rem;padding:8px 5px}.item-icon{display:grid;place-items:center;height:48px;font-size:34px}.item-icon img{max-height:48px;max-width:67px}.price{color:#ffe09b;font-size:.85rem;font-weight:750}#certificate canvas{display:block;width:100%;height:auto;margin:14px 0}[hidden]{display:none!important}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reward-pop{animation:none}}
 @media print{@page{size:A4 landscape;margin:8mm}body{background:white}main,section{max-width:none;margin:0;padding:0;border:0;box-shadow:none}header,nav,section:not(#certificate),h2,form,#actions{display:none!important}#certificate canvas{margin:0;max-height:190mm;object-fit:contain}}
 
@@ -65,8 +65,11 @@ button{border:0;border-radius:12px;background:#a0f1db;color:#123b35;padding:11px
 <p id="catStatus" role="status"></p>
 </section>
 <section id="shop"><p class="eyebrow">アイテムショップ</p><h2>エサと家具</h2>
-<h3>エサをあげる</h3><div id="foods" class="shop-grid"></div>
-<h3>部屋をかざる</h3><div id="wares" class="shop-grid"></div>
+<h3>エサをあげる <span class="shop-count">5種類</span></h3><div id="foods" class="shop-grid"></div>
+<h3>部屋をかざる <span class="shop-count">30種類</span></h3>
+<div class="row shop-filter"><label for="shopCategory">家具の種類</label><select id="shopCategory">
+<option value="">すべて</option><option>くつろぎ</option><option>机・収納</option><option>小物</option><option>家電</option>
+</select></div><div id="wares" class="shop-grid"></div>
 <p id="shopStatus" role="status"></p></section>
 
 <section id="certificate"><h2>賞状を作る</h2><form id="form"><div class="row"><label>名前<input id="student" maxlength="30" required></label><label>開始日<input id="start" type="date" required></label><label>終了日<input id="end" type="date" required></label><button>賞状を表示</button></div><p id="message" role="status"></p></form>
@@ -98,15 +101,43 @@ function refreshRecords() {
 }
 refreshRecords();
 const foods = [
-  {id:'kibble', name:'カリカリ', icon:'🥣', cost:20, xp:1},
-  {id:'fish', name:'おさかな', icon:'🐟', cost:40, xp:3},
-  {id:'feast', name:'ごちそう', icon:'🍗', cost:70, xp:6}
+  {id:'kibble', name:'カリカリ', cost:20, xp:1},
+  {id:'fish', name:'おさかな', cost:40, xp:3},
+  {id:'feast', name:'ごちそうチキン', cost:70, xp:6},
+  {id:'salmon', name:'サーモンプレート', cost:55, xp:5},
+  {id:'royal', name:'黄金のごちそう', cost:100, xp:9}
 ];
 const furniture = [
-  {id:'rugRound', name:'まるいラグ', cost:30},
-  {id:'sideTable', name:'木のテーブル', cost:40},
-  {id:'lampRoundFloor', name:'フロアランプ', cost:50},
-  {id:'loungeSofa', name:'ふかふかソファ', cost:60}
+  {id:'rugRound', name:'まるいラグ', cost:30, category:'小物'},
+  {id:'sideTable', name:'木のテーブル', cost:40, category:'机・収納'},
+  {id:'lampRoundFloor', name:'フロアランプ', cost:50, category:'小物'},
+  {id:'loungeSofa', name:'ふかふかソファ', cost:60, category:'くつろぎ'},
+  {id:'chairCushion', name:'クッションチェア', cost:30, category:'くつろぎ'},
+  {id:'chairRounded', name:'まるい椅子', cost:30, category:'くつろぎ'},
+  {id:'benchCushion', name:'クッションベンチ', cost:45, category:'くつろぎ'},
+  {id:'loungeChair', name:'ラウンジチェア', cost:55, category:'くつろぎ'},
+  {id:'loungeChairRelax', name:'リラックスチェア', cost:65, category:'くつろぎ'},
+  {id:'loungeSofaCorner', name:'コーナーソファ', cost:90, category:'くつろぎ'},
+  {id:'bedSingle', name:'シングルベッド', cost:70, category:'くつろぎ'},
+  {id:'bedDouble', name:'ダブルベッド', cost:95, category:'くつろぎ'},
+  {id:'desk', name:'勉強机', cost:55, category:'机・収納'},
+  {id:'deskCorner', name:'コーナーデスク', cost:75, category:'机・収納'},
+  {id:'tableCoffee', name:'ローテーブル', cost:40, category:'机・収納'},
+  {id:'tableRound', name:'ラウンドテーブル', cost:55, category:'机・収納'},
+  {id:'tableGlass', name:'ガラステーブル', cost:75, category:'机・収納'},
+  {id:'sideTableDrawers', name:'引き出し付きテーブル', cost:55, category:'机・収納'},
+  {id:'bookcaseOpen', name:'オープン本棚', cost:60, category:'机・収納'},
+  {id:'bookcaseClosedWide', name:'ワイドキャビネット', cost:75, category:'机・収納'},
+  {id:'cabinetBedDrawer', name:'木のチェスト', cost:60, category:'机・収納'},
+  {id:'lampRoundTable', name:'まるい卓上ランプ', cost:30, category:'小物'},
+  {id:'lampSquareFloor', name:'スクエアランプ', cost:60, category:'小物'},
+  {id:'pottedPlant', name:'観葉植物', cost:25, category:'小物'},
+  {id:'plantSmall2', name:'小さな鉢植え', cost:20, category:'小物'},
+  {id:'bear', name:'くまのぬいぐるみ', cost:25, category:'小物'},
+  {id:'rugRounded', name:'やわらかラグ', cost:40, category:'小物'},
+  {id:'radio', name:'レトロラジオ', cost:45, category:'家電'},
+  {id:'televisionVintage', name:'レトロテレビ', cost:60, category:'家電'},
+  {id:'televisionModern', name:'薄型テレビ', cost:80, category:'家電'}
 ];
 const gameKey = 'gyoukan-marathon-cat-game-v1';
 const costOf = (items, owned) => items.reduce((cost, item) => cost + item.cost * (owned[item.id] || 0), 0);
@@ -156,7 +187,7 @@ function renderCat() {
     el('catProgress').value = xp - stage.xp;
   }
   el('catGoal').textContent = next ? '次の進化まであと ' + (next.xp - xp) + ' pt' : '最終進化！ エサでさらに少しずつ育ちます。';
-  document.dispatchEvent(new CustomEvent('marathon-cat-update', {detail:{xp, index, owned:game.owned, poses:game.poses}}));
+  document.dispatchEvent(new CustomEvent('marathon-cat-update', {detail:{xp, index, owned:game.owned, poses:game.poses, furniture}}));
 }
 function buy(item, isFood) {
   if (balance() < item.cost || (!isFood && game.owned[item.id])) return;
@@ -186,13 +217,11 @@ function makeShop(items, isFood, container) {
     const icon = document.createElement('span');
     icon.className = 'item-icon';
     icon.setAttribute('aria-hidden','true');
-    if (isFood) icon.textContent = item.icon;
-    else {
-      const image = document.createElement('img');
-      image.src = 'furniture/Isometric/' + item.id + '_SE.png';
-      image.alt = '';
-      icon.append(image);
-    }
+    const image = document.createElement('img');
+    image.src = isFood ? 'art/food-' + item.id + '.webp' : 'furniture/Isometric/' + item.id + '_SE.png';
+    image.alt = '';
+    image.loading = 'lazy';
+    icon.append(image);
     const title = document.createElement('strong');
     title.textContent = item.name;
     const description = document.createElement('p');
@@ -209,12 +238,19 @@ function makeShop(items, isFood, container) {
   }));
 }
 makeShop(foods,true,el('foods'));
+function renderFurnitureShop() {
+  const category = el('shopCategory').value;
+  makeShop(furniture.filter(item => !category || category === item.category),false,el('wares'));
+  renderShop();
+}
+el('shopCategory').onchange = renderFurnitureShop;
 makeShop(furniture,false,el('wares'));
 function renderShop() {
   const coins = balance();
   el('coins').textContent = coins;
   for (const item of [...foods,...furniture]) {
     const button = shopButtons.get(item.id);
+    if (!button) continue;
     const owned = game.owned[item.id];
     button.disabled = Boolean(owned) || coins < item.cost;
     button.textContent = owned ? '購入済み' : coins < item.cost ? 'あと ' + (item.cost - coins) + ' コイン' : item.xp ? '買ってあげる' : '家具を買う';
