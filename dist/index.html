@@ -18,6 +18,7 @@
 #roomInventory{margin:6px 0 0;font-size:.95rem}
 
 @media print{@page{size:A4 landscape;margin:8mm}body{background:white}main,section{max-width:none;margin:0;padding:0;border:0}header,#record,#room,h2,form,#actions{display:none!important}canvas{margin:0;max-height:190mm;object-fit:contain}}
+.room-3d .room-plane,.room-3d #furniture{display:none}.room-3d canvas{position:absolute;inset:0;width:100%;height:100%;margin:0;touch-action:none;cursor:grab}.room-3d canvas:active{cursor:grabbing}#layoutFurniture{display:block;font:inherit;padding:8px;background:white;color:#183c31;border:1px solid #85988d;border-radius:8px}#layoutMessage{min-height:1.5em;margin:8px 0}
 </style>
 <main><header><h1>業間マラソン</h1></header>
 <section id="record"><h2>今日の記録</h2><div id="today"></div><p aria-live="polite"><strong id="count">0</strong> 周</p><div class="row"><button id="plus">＋1周</button><button id="minus">−1周</button></div><p>これまで <b id="all">0</b> 周</p><p id="error" role="alert"></p><details><summary>日別の記録</summary><ul id="history"></ul></details></section>
@@ -27,6 +28,16 @@
 <div class="room-plane room-wall-left"></div><div class="room-plane room-wall-right"></div>
 <div class="room-plane room-edge"></div><div class="room-plane room-floor"></div><div id="furniture"></div>
 </div>
+<p id="roomMode">ドラッグで視点を回し、ピンチやスクロールで拡大できます。</p>
+<div id="layoutTools" hidden>
+<div class="row">
+<label>配置する家具<select id="layoutFurniture"><option value="">家具を選ぶ</option></select></label>
+<button id="layoutTurn" disabled>家具を90°回す</button>
+<button id="layoutReset">視点をもどす</button>
+</div>
+<p id="layoutMessage" role="status"></p>
+</div>
+
 <p id="roomStatus" role="status">1周走ると、家具が1つ増えるよ。</p>
 <div class="room-meta"><strong id="furnitureCount"></strong><div id="roomNav" class="room-nav" hidden><button id="previousRoom">前の部屋</button><span id="roomNumber"></span><button id="nextRoom">次の部屋</button></div></div>
 <p id="roomInventory"></p>
@@ -82,6 +93,7 @@ function renderRoom(total, animate) {
     image.style.width = width + '%';
     return image;
   }));
+  document.dispatchEvent(new CustomEvent('marathon-room-update', {detail:{index:roomIndex, items:visible}}));
   el('furnitureCount').textContent = '集めた家具 ' + total + 'こ';
   el('roomInventory').textContent = visible.length ? visible.map(item => item[1]).join('、') : 'まだ家具はありません。';
   el('roomNav').hidden = lastRoom(total) === 0;
@@ -169,6 +181,7 @@ el('nextRoom').onclick = () => {
   if (roomIndex < lastRoom(total)) roomIndex += 1;
   renderRoom(total, false);
 };
+document.addEventListener('marathon-room-ready', () => renderRoom(sum(dates()), false));
 window.addEventListener('focus', () => render());
 roomIndex = lastRoom(sum(dates()));
 render();
@@ -211,4 +224,4 @@ el('form').onsubmit = event => {
   canvas.setAttribute('aria-label', name + 'さん、' + start + 'から' + end + 'まで、合計' + laps + '周');
   el('preview').hidden = false;
 };
-</script></html>
+</script><script type="module" src="room3d.js"></script></html>
