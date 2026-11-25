@@ -1,30 +1,51 @@
 <!doctype html>
 <html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>業間マラソン</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#fff6e6;color:#183c31;font:16px system-ui,sans-serif}main{max-width:760px;margin:auto;padding:24px 16px}header,section{padding:24px;border-radius:22px;margin-bottom:16px}header,button{background:#185542;color:white}h1,h2{margin:0 0 12px}h1{font-size:clamp(28px,7vw,55px);margin:0}section{background:white;border:1px solid #e2d9c6}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}input{display:block;padding:8px;border:1px solid #85988d;border-radius:8px;font:inherit;max-width:100%}button{border:0;border-radius:10px;padding:12px 18px;font:inherit;font-weight:bold;text-decoration:none;cursor:pointer}button:disabled{opacity:.45}#count{font-size:52px}canvas{display:block;width:100%;height:auto;margin:14px 0}[hidden]{display:none!important}
-#room{overflow:hidden}#scene{position:relative;aspect-ratio:1.55;overflow:hidden;border-radius:18px;background:#d9eddf}
-.cat-placeholder{display:grid;place-items:center;position:absolute;inset:0;font-size:clamp(64px,20vw,132px)}
-.room-3d .cat-placeholder{display:none}.room-3d canvas{position:absolute;inset:0;width:100%;height:100%;margin:0;touch-action:none;cursor:grab}.room-3d canvas:active{cursor:grabbing}
-#catStage{margin:0 0 6px;font-size:1.25rem}#catStatus{min-height:1.5em;margin:.5em 0 0;color:#185542;font-weight:700}
-#catProgress{width:100%;height:14px;accent-color:#24775d}#roomMode{margin:.7em 0;color:#355c50;font-size:.94rem}
-#catControls button{background:#e5f2e9;color:#185542}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at top,#35417b 0,#111830 55%,#0b1124 100%) fixed;color:#f8f5ff;font:16px system-ui,sans-serif}main{max-width:790px;margin:auto;padding:20px 14px 44px}h1,h2,h3,p{margin:0 0 12px}h1{font-size:clamp(27px,7vw,48px);line-height:1.05;margin:0;font-weight:950}h2{font-size:clamp(24px,6vw,35px);line-height:1.1}h3{margin-top:24px}section{padding:clamp(14px,4vw,25px);margin-bottom:16px;border-radius:24px;background:#1b2444;border:1px solid #526295;box-shadow:0 8px 0 #0d132a77;scroll-margin-top:64px}
+.game-header,.room-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.game-header{padding:10px 1px 16px}.eyebrow{font-weight:850;letter-spacing:.1em;color:#9cf3df;font-size:.83rem;margin:0 0 6px}
+.wallet{display:grid;grid-template-columns:auto auto;column-gap:6px;align-items:center;justify-content:center;min-width:94px;text-align:center;background:#352951;padding:8px 12px;border:1px solid #deab60;border-radius:16px;color:#ffe09b;font-variant-numeric:tabular-nums}.wallet span{color:#ffc456;text-shadow:0 0 10px #ffb649}.wallet strong{font-size:1.25rem}.wallet small{grid-column:1/-1;font-weight:bold}
+.game-nav{position:sticky;top:0;z-index:3;display:flex;gap:5px;margin-bottom:12px;padding:6px;border:1px solid #526295;border-radius:14px;background:#131c37}.game-nav a{flex:1;text-align:center;text-decoration:none;color:#f4f4ff;font-weight:750;padding:9px 3px;border-radius:8px}.game-nav a:hover,.game-nav a:focus-visible{background:#354274}
+button{border:0;border-radius:12px;background:#a0f1db;color:#123b35;padding:11px 14px;font:inherit;font-weight:840;cursor:pointer}button.quiet{background:#303d65;color:#f9f6ff}button:disabled{opacity:.58;cursor:default}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #ffe09b;outline-offset:2px}
+.mission{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:linear-gradient(125deg,#263e6b,#463365)}.mission-action{display:grid;gap:8px}.mission-action #plus{background:#ffcd70;color:#392654;box-shadow:0 4px 0 #b86a69}.laps{margin:0;color:#ede7fd}.laps strong{font-size:clamp(35px,9vw,64px);line-height:1.02;color:white}.run-reward{color:#ffe09b;font-weight:700;margin:0}.reward-pop{animation:reward .35s ease-out}@keyframes reward{from{transform:translateY(3px) scale(.91);opacity:.65}to{transform:none;opacity:1}}.mission details,.mission #error{grid-column:1/-1;margin:0}.mission #error{color:#ffbdc6}
+.row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.room-heading h2{margin:0 0 12px;overflow-wrap:anywhere}.room-heading button{flex-shrink:0}input,select{display:block;width:100%;max-width:100%;padding:9px;border:1px solid #7586bd;border-radius:9px;font:inherit;color:white;background:#101a36}#nameForm,#decorate{margin:8px 0 12px}#furnitureHint{font-size:.85rem;color:#c7d6fb}
+#scene{position:relative;isolation:isolate;aspect-ratio:1.55;overflow:hidden;border-radius:18px;background:#3f5f70}.cat-placeholder{display:grid;place-items:center;position:absolute;inset:0;font-size:clamp(60px,19vw,123px)}.room-3d .cat-placeholder{display:none}.room-3d canvas{position:absolute;inset:0;width:100%;height:100%;margin:0;touch-action:none;cursor:grab}.room-3d canvas:active{cursor:grabbing}.level-chip{position:absolute;z-index:1;left:9px;top:9px;padding:6px 10px;border-radius:10px;background:#141c37e8;color:#fff;display:grid;line-height:1.2;pointer-events:none}.level-chip span{font-size:.77rem;color:#fbd47c;font-weight:850}.level-chip strong{font-size:.9rem}.growth{margin-top:13px;background:#111a34;border-radius:12px;padding:11px 13px}.growth p{margin:0}.growth progress{width:100%;height:14px;accent-color:#b183ff}#roomMode{margin:.7em 0;color:#c7d6fb;font-size:.85rem}#catStatus,#shopStatus{color:#aef3df;font-weight:800;margin:8px 0 0}#catStatus:empty,#shopStatus:empty{display:none}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,142px),1fr));gap:9px}.shop-card{padding:12px;border-radius:15px;background:linear-gradient(155deg,#394b77,#282649);border:1px solid #6778a8;display:flex;flex-direction:column;gap:6px}.shop-card p{margin:0;font-size:.83rem;color:#e0e3fa}.shop-card button{margin-top:auto;font-size:.88rem;padding:8px 5px}.item-icon{display:grid;place-items:center;height:48px;font-size:34px}.item-icon img{max-height:48px;max-width:67px}.price{color:#ffe09b;font-size:.85rem;font-weight:750}#certificate canvas{display:block;width:100%;height:auto;margin:14px 0}[hidden]{display:none!important}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reward-pop{animation:none}}
+@media print{@page{size:A4 landscape;margin:8mm}body{background:white}main,section{max-width:none;margin:0;padding:0;border:0;box-shadow:none}header,nav,section:not(#certificate),h2,form,#actions{display:none!important}#certificate canvas{margin:0;max-height:190mm;object-fit:contain}}
 
-@media print{@page{size:A4 landscape;margin:8mm}body{background:white}main,section{max-width:none;margin:0;padding:0;border:0}header,#record,#room,h2,form,#actions{display:none!important}canvas{margin:0;max-height:190mm;object-fit:contain}}
 </style>
-<main><header><h1>業間マラソン</h1></header>
-<section id="record"><h2>今日の記録</h2><div id="today"></div><p aria-live="polite"><strong id="count">0</strong> 周</p><div class="row"><button id="plus">＋1周</button><button id="minus">−1周</button></div><p>これまで <b id="all">0</b> 周</p><p id="error" role="alert"></p><details><summary>日別の記録</summary><ul id="history"></ul></details></section>
-<section id="room">
-<h2>ねこの部屋</h2>
-<p id="catStage"></p>
-<div id="scene"><span class="cat-placeholder" role="img" aria-label="ねこ">🐈</span></div>
-<p id="roomMode">ドラッグで視点を回し、ピンチやスクロールで拡大できます。</p>
-<div id="catControls" class="row" hidden><button id="catMotion">動きを止める</button><button id="catReset">視点をもどす</button></div>
-<p id="catStatus" role="status"></p>
-<p id="catGoal"></p><progress id="catProgress" aria-label="次の成長までの周回"></progress>
+<main>
+<header class="game-header">
+<div><p class="eyebrow">ねこ育成ゲーム</p><h1>業間マラソン</h1></div>
+<div class="wallet" aria-label="持っているコイン"><span aria-hidden="true">●</span><strong id="coins">0</strong><small>コイン</small></div>
+</header>
+<nav class="game-nav" aria-label="ゲームのメニュー"><a href="#room">ねこの部屋</a><a href="#shop">ショップ</a><a href="#certificate">賞状</a></nav>
+<section id="record" class="mission">
+<div><p class="eyebrow">今日のラン</p><div id="today"></div><p class="laps" aria-live="polite"><strong id="count">0</strong> <span>/ 12 周</span></p></div>
+<div class="mission-action"><button id="plus">＋1周を記録</button><button id="minus" class="quiet">1周取り消す</button></div>
+<p id="runReward" class="run-reward" role="status">1周で10コイン</p>
+<p id="error" role="alert" hidden></p>
+<details><summary>日別の記録 ・ 合計 <b id="all">0</b> 周</summary><ul id="history"></ul></details>
 </section>
+<section id="room">
+<div class="room-heading"><div><p class="eyebrow">ねこの部屋</p><h2 id="petName">こはく</h2></div><button id="rename" class="quiet" aria-expanded="false" aria-controls="nameForm">名前をつける</button></div>
+<form id="nameForm" class="row" hidden><label>ねこの名前<input id="nameInput" maxlength="16" required></label><button>名前を保存</button><button type="button" id="nameCancel" class="quiet">キャンセル</button></form>
+<div id="scene">
+<span class="cat-placeholder" role="img" aria-label="ねこ">🐈</span>
+<div class="level-chip"><span id="catLevel"></span><strong id="catStage"></strong></div>
+</div>
+<p id="roomMode">ドラッグで視点を回せます。ピンチやホイールで拡大・縮小できます。</p>
+<div id="catControls" class="row" hidden><button id="catMotion" class="quiet">動きを止める</button><button id="catReset" class="quiet">視点をもどす</button></div>
+<div id="decorate" class="row" hidden><label>家具を選ぶ<select id="furnitureSelect"><option value="">家具を選ぶ</option></select></label><button id="furnitureTurn" class="quiet" disabled>家具を回す</button><span id="furnitureHint"></span></div>
+<div class="growth"><p id="catGoal"></p><progress id="catProgress" aria-label="次の進化までの成長ポイント"></progress></div>
+<p id="catStatus" role="status"></p>
+</section>
+<section id="shop"><p class="eyebrow">アイテムショップ</p><h2>エサと家具</h2>
+<h3>エサをあげる</h3><div id="foods" class="shop-grid"></div>
+<h3>部屋をかざる</h3><div id="wares" class="shop-grid"></div>
+<p id="shopStatus" role="status"></p></section>
 
-
-<section><h2>賞状を作る</h2><form id="form"><div class="row"><label>名前<input id="student" maxlength="30" required></label><label>開始日<input id="start" type="date" required></label><label>終了日<input id="end" type="date" required></label><button>賞状を表示</button></div><p id="message" role="status"></p></form>
+<section id="certificate"><h2>賞状を作る</h2><form id="form"><div class="row"><label>名前<input id="student" maxlength="30" required></label><label>開始日<input id="start" type="date" required></label><label>終了日<input id="end" type="date" required></label><button>賞状を表示</button></div><p id="message" role="status"></p></form>
 <div id="preview" hidden><canvas id="award" width="2480" height="1754" role="img"></canvas><div id="actions"><div class="row"><button id="copy">賞状の画像をコピー</button><button id="print">印刷する</button></div><p id="copyStatus" role="status"></p><p>ロイロノートに提出するときは、コピーした画像をノートに貼り付けてから提出してください。</p></div></div></section></main>
 <script>
 const el = id => document.getElementById(id);
@@ -34,45 +55,177 @@ const dateText = day => day.replaceAll('-', '/');
 const dates = () => Object.keys(records).sort();
 const sum = days => days.reduce((total, day) => total + records[day], 0);
 let records = {};
+let recordsReadable = true;
 try {
   const stored = JSON.parse(localStorage.getItem(storageKey) || '{}');
   records = Object.fromEntries(Object.entries(stored).filter(([day, laps]) =>
     /^\d{4}-\d{2}-\d{2}$/.test(day) && Number.isSafeInteger(laps) && laps > 0));
 } catch {
-  el('error').textContent = '保存した記録を読み込めませんでした。';
+  setError('保存した記録を読み込めませんでした。');
+  recordsReadable = false;
   el('plus').disabled = true;
 }
-const catStages = [
-  {laps:0, name:'ちいさな子ねこ'},
-  {laps:5, name:'げんきな子ねこ'},
-  {laps:15, name:'わかいねこ'},
-  {laps:35, name:'おとなのねこ'},
-  {laps:70, name:'りっぱなねこ'}
+const foods = [
+  {id:'kibble', name:'カリカリ', icon:'🥣', cost:20, xp:1},
+  {id:'fish', name:'おさかな', icon:'🐟', cost:40, xp:3},
+  {id:'feast', name:'ごちそう', icon:'🍗', cost:70, xp:6}
 ];
-const catStage = total => catStages.findLastIndex(stage => total >= stage.laps);
-function renderCat(total) {
-  const index = catStage(total);
-  const stage = catStages[index];
-  const next = catStages[index + 1];
+const furniture = [
+  {id:'rugRound', name:'まるいラグ', cost:30},
+  {id:'sideTable', name:'木のテーブル', cost:40},
+  {id:'lampRoundFloor', name:'フロアランプ', cost:50},
+  {id:'loungeSofa', name:'ふかふかソファ', cost:60}
+];
+const gameKey = 'gyoukan-marathon-cat-game-v1';
+const costOf = (items, owned) => items.reduce((cost, item) => cost + item.cost * (owned[item.id] || 0), 0);
+let game = {name:'', fed:{}, owned:{}, poses:{}};
+try {
+  const saved = JSON.parse(localStorage.getItem(gameKey) || 'null');
+  if (saved) game = saved;
+} catch {
+  setError('猫のデータを読み込めませんでした。');
+}
+const stages = [
+  {xp:0, name:'子ねこ'},
+  {xp:3, name:'わんぱくねこ'},
+  {xp:9, name:'たてがみねこ'},
+  {xp:18, name:'オーラライオン'}
+];
+const growth = () => foods.reduce((xp, food) => xp + food.xp * (game.fed[food.id] || 0), 0);
+const stageIndex = xp => stages.findLastIndex(stage => xp >= stage.xp);
+const balance = (laps = sum(dates())) => laps * 10 - costOf(foods, game.fed) - costOf(furniture, game.owned);
+function setError(text) {
+  el('error').textContent = text;
+  el('error').hidden = !text;
+}
+function saveGame(next) {
+  try {
+    localStorage.setItem(gameKey, JSON.stringify(next));
+    game = next;
+    return true;
+  } catch {
+    el('catStatus').textContent = 'この端末に猫のデータを保存できませんでした。';
+    el('shopStatus').textContent = 'この端末に買い物を保存できませんでした。';
+    return false;
+  }
+}
+function renderCat() {
+  const xp = growth();
+  const index = stageIndex(xp);
+  const stage = stages[index];
+  const next = stages[index + 1];
+  el('petName').textContent = game.name || 'こはく';
+  el('rename').textContent = game.name ? '名前を変える' : '名前をつける';
+  el('catLevel').textContent = 'Lv. ' + (index + 1);
   el('catStage').textContent = stage.name;
   el('catProgress').hidden = !next;
   if (next) {
-    el('catProgress').max = next.laps - stage.laps;
-    el('catProgress').value = total - stage.laps;
+    el('catProgress').max = next.xp - stage.xp;
+    el('catProgress').value = xp - stage.xp;
   }
-  el('catGoal').textContent = next ? '次の成長まであと ' + (next.laps - total) + ' 周' : '走った分だけ、これからも少しずつ育ちます。';
-  document.dispatchEvent(new CustomEvent('marathon-cat-update', {detail:total}));
+  el('catGoal').textContent = next ? '次の進化まであと ' + (next.xp - xp) + ' pt' : '最終進化！ エサでさらに少しずつ育ちます。';
+  document.dispatchEvent(new CustomEvent('marathon-cat-update', {detail:{xp, index, owned:game.owned, poses:game.poses}}));
 }
+function buy(item, isFood) {
+  if (balance() < item.cost || (!isFood && game.owned[item.id])) return;
+  const previous = stageIndex(growth());
+  const field = isFood ? 'fed' : 'owned';
+  const counts = {...game[field], [item.id]:(game[field][item.id] || 0) + 1};
+  if (!saveGame({...game, [field]:counts})) return;
+  render();
+  const current = stageIndex(growth());
+  const notice = isFood ? (current > previous ? '進化！ ' + stages[current].name + 'になった！' : item.name + 'をあげた！ 成長 +' + item.xp + ' pt') :
+    item.name + 'を部屋に置きました。';
+  el('shopStatus').textContent = notice;
+  el('catStatus').textContent = notice;
+  const scene = el('scene');
+  const pop = document.createElement('span');
+  pop.className = 'reward-pop';
+  pop.style.cssText = 'position:absolute;z-index:2;right:10px;bottom:10px;background:#382763;color:white;padding:8px 12px;border-radius:10px;pointer-events:none';
+  pop.textContent = current > previous ? '✨ 進化！' : isFood ? '+' + item.xp + ' pt' : '家具をゲット！';
+  scene.append(pop);
+  setTimeout(() => pop.remove(), 1300);
+}
+const shopButtons = new Map();
+function makeShop(items, isFood, container) {
+  container.replaceChildren(...items.map(item => {
+    const card = document.createElement('article');
+    card.className = 'shop-card';
+    const icon = document.createElement('span');
+    icon.className = 'item-icon';
+    icon.setAttribute('aria-hidden','true');
+    if (isFood) icon.textContent = item.icon;
+    else {
+      const image = document.createElement('img');
+      image.src = 'furniture/Isometric/' + item.id + '_SE.png';
+      image.alt = '';
+      icon.append(image);
+    }
+    const title = document.createElement('strong');
+    title.textContent = item.name;
+    const description = document.createElement('p');
+    description.textContent = isFood ? '成長 +' + item.xp + ' pt' : '部屋に置いて模様替え';
+    const price = document.createElement('span');
+    price.className = 'price';
+    price.textContent = item.cost + ' コイン';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.addEventListener('click', () => buy(item, isFood));
+    shopButtons.set(item.id,button);
+    card.append(icon,title,description,price,button);
+    return card;
+  }));
+}
+makeShop(foods,true,el('foods'));
+makeShop(furniture,false,el('wares'));
+function renderShop() {
+  const coins = balance();
+  el('coins').textContent = coins;
+  for (const item of [...foods,...furniture]) {
+    const button = shopButtons.get(item.id);
+    const owned = game.owned[item.id];
+    button.disabled = Boolean(owned) || coins < item.cost;
+    button.textContent = owned ? '購入済み' : coins < item.cost ? 'あと ' + (item.cost - coins) + ' コイン' : item.xp ? '買ってあげる' : '家具を買う';
+    button.setAttribute('aria-label', item.name + '・' + button.textContent);
+  }
+}
+function showNameForm(show) {
+  el('nameForm').hidden = !show;
+  el('rename').setAttribute('aria-expanded',String(show));
+  if (show) {
+    el('nameInput').value = game.name || 'こはく';
+    el('nameInput').focus();
+    el('nameInput').select();
+  } else el('rename').focus();
+}
+el('rename').onclick = () => showNameForm(el('nameForm').hidden);
+el('nameCancel').onclick = () => showNameForm(false);
+el('nameForm').onsubmit = event => {
+  event.preventDefault();
+  const name = el('nameInput').value.trim();
+  if (!name) { el('nameInput').focus(); return; }
+  if (!saveGame({...game,name})) return;
+  renderCat();
+  el('catStatus').textContent = name + 'の名前を保存しました。';
+  showNameForm(false);
+};
+document.addEventListener('marathon-place-furniture', ({detail:{id, pose}}) => {
+  if (!game.owned[id]) return;
+  if (!saveGame({...game, poses:{...game.poses,[id]:pose}})) return;
+  renderCat();
+});
 
 
 function render() {
   const day = today();
   el('today').textContent = dateText(day);
   el('count').textContent = records[day] || 0;
-  el('minus').disabled = !records[day];
+  el('minus').disabled = !recordsReadable || !records[day];
+  el('plus').disabled = !recordsReadable || (records[day] || 0) >= 12;
   const total = sum(dates());
   el('all').textContent = total;
-  renderCat(total);
+  renderCat();
+  renderShop();
   el('history').replaceChildren(...dates().reverse().map(date => {
     const row = document.createElement('li');
     row.textContent = dateText(date) + '　' + records[date] + '周';
@@ -86,6 +239,12 @@ function hidePreview() {
 }
 function record(delta) {
   const day = today();
+  const count = records[day] || 0;
+  if (!recordsReadable || (delta > 0 && count >= 12) || (delta < 0 && !count)) return;
+  if (delta < 0 && balance() < 10) {
+    setError('残り10コイン以上あるときに、1周を取り消せます。');
+    return;
+  }
   const updated = {...records};
   const laps = (updated[day] || 0) + delta;
   if (laps > 0) updated[day] = laps;
@@ -93,16 +252,17 @@ function record(delta) {
   try {
     localStorage.setItem(storageKey, JSON.stringify(updated));
   } catch {
-    el('error').textContent = 'このブラウザに記録を保存できません。';
+    setError('このブラウザに記録を保存できません。');
     return;
   }
   records = updated;
-  el('error').textContent = '';
+  setError('');
   hidePreview();
-  const total = sum(dates());
-  const level = catStage(total);
-  el('catStatus').textContent = delta < 0 ? '1周取り消しました。' :
-    level > catStage(total - 1) ? '成長したよ！ ' + catStages[level].name : '1周ぶん、ねこが育ったよ！';
+  const reward = el('runReward');
+  reward.textContent = delta < 0 ? '1周取り消し・−10コイン' :
+    laps === 12 ? '＋10コイン！ 今日の上限12周に到達' : '＋10コイン！';
+  reward.classList.remove('reward-pop');
+  requestAnimationFrame(() => reward.classList.add('reward-pop'));
   render();
 }
 el('start').value = dates()[0] || today();
@@ -129,7 +289,7 @@ el('copy').onclick = async () => {
   }
 };
 el('form').oninput = hidePreview;
-document.addEventListener('marathon-cat-ready', () => renderCat(sum(dates())));
+document.addEventListener('marathon-cat-ready', renderCat);
 window.addEventListener('focus', () => render());
 render();
 el('form').onsubmit = event => {

@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {OBJLoader} from 'three/addons/loaders/OBJLoader.js';
+import {MTLLoader} from 'three/addons/loaders/MTLLoader.js';
 
 const sceneBox = document.getElementById('scene');
 const stageMessage = document.getElementById('roomMode');
@@ -11,7 +13,7 @@ function start() {
   surface.setAttribute('role', 'img');
   surface.setAttribute('aria-label', '猫が歩き回る3Dの部屋');
   const world = new THREE.Scene();
-  world.background = new THREE.Color('#d9eddf');
+  world.background = new THREE.Color('#596c94');
   const camera = new THREE.PerspectiveCamera(39, 1, .1, 100);
   camera.position.set(9, 7, 11);
   const orbit = new OrbitControls(camera, surface);
@@ -58,8 +60,8 @@ function start() {
   box(rear, '#a6dfe5', .6, 1.65, -4.105, 2.5, 1.43, .1);
   for (const x of [-.65, .6, 1.85]) box(rear, '#faf5e3', x, 1.65, -4.03, .08, 1.51, .09);
   for (const y of [.91, 1.65, 2.39]) box(rear, '#faf5e3', .6, y, -4.03, 2.56, .08, .09);
-  oval(world, '#679d8d', 0, .006, .48, 2.6, .018, 1.9);
-  oval(world, '#8fb9a7', 0, .012, .48, 2.43, .018, 1.73);
+  const rugBorder = oval(world, '#679d8d', 0, .006, .48, 2.6, .018, 1.9);
+  const rugBase = oval(world, '#8fb9a7', 0, .012, .48, 2.43, .018, 1.73);
 
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 36),
     new THREE.MeshBasicMaterial({color: '#654636', opacity: .19, transparent: true, depthWrite: false}));
@@ -124,11 +126,122 @@ function start() {
   const tip = curve.getPoint(1);
   oval(tail, cream, tip.x, tip.y, tip.z, .078, .078, .078);
 
+  const mane = new THREE.Group();
+  head.add(mane);
+  for (let i = 0; i < 11; i++) {
+    const angle = i * Math.PI * 2 / 11;
+    const tuft = oval(mane, i % 2 ? '#9c4529' : '#bd5426', Math.cos(angle)*.38, Math.sin(angle)*.36-.04, -.1, .15,.24,.21);
+    tuft.rotation.z = angle - Math.PI/2;
+  }
+  const aura = new THREE.Group();
+  cat.add(aura);
+  const stars = [];
+  const glow = new THREE.MeshBasicMaterial({color:'#ffe386',transparent:true,opacity:.88,depthWrite:false});
+  const haloMaterial = new THREE.MeshBasicMaterial({color:'#ffc061',transparent:true,opacity:.64,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending});
+  const halo = new THREE.Mesh(new THREE.RingGeometry(.91,1.03,54),haloMaterial);
+  halo.rotation.x = -Math.PI/2;
+  halo.position.y = .055;
+  aura.add(halo);
+  const spark = new THREE.OctahedronGeometry(.09);
+  for (let i=0;i<18;i++) {
+    const star = new THREE.Mesh(spark,glow);
+    aura.add(star);
+    stars.push(star);
+  }
+  const gold = new THREE.PointLight('#ffc15e',3.2,4,1.4);
+  gold.position.set(0,.65,.3);
+  aura.add(gold);
+  let evolution = 0;
+
+  const furnitureSlots = {
+    rugRound: [0,.5,0], sideTable: [-2.8,-2.6,0],
+    lampRoundFloor: [3,-2.8,0], loungeSofa: [-.3,-3,0]
+  };
+  const models = new Map();
+  const picker = document.getElementById('furnitureSelect');
+  const rotateFurniture = document.getElementById('furnitureTurn');
+  const hint = document.getElementById('furnitureHint');
+  let ownedIds = [];
+  let savedPoses = {};
+  let selected = '';
+  const floor = new THREE.Plane(new THREE.Vector3(0,1,0),0);
+  const ray = new THREE.Raycaster();
+
+  function applyPose(id) {
+    const model = models.get(id);
+    if (!model) return;
+    const [x,z,turns] = savedPoses[id] || furnitureSlots[id];
+    model.position.set(x,id === 'rugRound' ? .044 : 0,z);
+    model.rotation.y = turns * Math.PI / 2;
+  }
+  function updatePicker() {
+    document.getElementById('decorate').hidden = !ownedIds.length;
+    picker.replaceChildren(new Option('家具を選ぶ',''),...ownedIds.map(id => new Option(furnitureNames[id],id)));
+    picker.value = selected;
+    rotateFurniture.disabled = !selected;
+  }
+  const furnitureNames = {
+    rugRound:'まるいラグ', sideTable:'木のテーブル',
+    lampRoundFloor:'フロアランプ', loungeSofa:'ふかふかソファ'
+  };
+  function loadFurniture(id) {
+    const folder = new URL('furniture/Models/',document.baseURI).href;
+    new MTLLoader().setPath(folder).loadAsync(id + '.mtl')
+      .then(materials => new OBJLoader().setPath(folder).setMaterials(materials).loadAsync(id + '.obj'))
+      .then(model => {
+        const bounds = new THREE.Box3().setFromObject(model);
+        const center = bounds.getCenter(new THREE.Vector3());
+        model.position.set(-center.x,-bounds.min.y,-center.z);
+        const root = new THREE.Group();
+        root.add(model);
+        root.scale.setScalar(.23);
+        models.set(id,root);
+        world.add(root);
+        if (id === 'rugRound') {
+          rugBase.visible = false;
+          rugBorder.visible = false;
+        }
+        applyPose(id);
+        draw();
+      }).catch(() => {
+        hint.textContent = '家具を読み込めませんでした。ページを再読み込みしてください。';
+      });
+  }
+  function place(id, pose) {
+    document.dispatchEvent(new CustomEvent('marathon-place-furniture',{detail:{id,pose}}));
+  }
+  picker.onchange = () => {
+    selected = picker.value;
+    rotateFurniture.disabled = !selected;
+    hint.textContent = selected ? '床をタップして置きます。' : '';
+  };
+  rotateFurniture.onclick = () => {
+    if (!selected) return;
+    const [x,z,turns] = savedPoses[selected] || furnitureSlots[selected];
+    place(selected,[x,z,(turns + 1) % 4]);
+  };
+  let pointer;
+  surface.addEventListener('pointerdown', event => {
+    pointer = event.isPrimary && event.button === 0 ? [event.pointerId,event.clientX,event.clientY] : undefined;
+  });
+  surface.addEventListener('pointercancel', () => { pointer = undefined; });
+  surface.addEventListener('pointerup', event => {
+    const tap = pointer;
+    pointer = undefined;
+    if (!selected || !tap || tap[0] !== event.pointerId || Math.hypot(tap[1]-event.clientX,tap[2]-event.clientY) > 7) return;
+    const rect = surface.getBoundingClientRect();
+    ray.setFromCamera(new THREE.Vector2((event.clientX-rect.left)/rect.width*2-1,1-(event.clientY-rect.top)/rect.height*2),camera);
+    const point = ray.ray.intersectPlane(floor,new THREE.Vector3());
+    if (!point || Math.abs(point.x) > 4.2 || Math.abs(point.z) > 4.2) return;
+    const [, , turns] = savedPoses[selected] || furnitureSlots[selected];
+    place(selected,[THREE.MathUtils.clamp(point.x,-3.25,3.25),THREE.MathUtils.clamp(point.z,-3.25,3.25),turns]);
+  });
+
   let target = new THREE.Vector3(1.9, 0, .9);
   let pause = 0;
   let time = 0;
   let gait = 0;
-  let size = .74;
+  let size = .76;
   let desiredSize = size;
   let heading = .5;
   let lastFrame = null;
@@ -182,6 +295,19 @@ function start() {
       eyes.forEach(eye => { eye.scale.y = time % 5 > 4.86 ? .16 : 1; });
     }
     size = moving ? THREE.MathUtils.lerp(size,desiredSize,Math.min(1,dt*5)) : desiredSize;
+    mane.visible = evolution >= 2;
+    aura.visible = evolution >= 3;
+    if (aura.visible) {
+      halo.scale.setScalar(1 + Math.sin(time*4)*.09);
+      stars.forEach((star,i) => {
+        const angle = i * 2.399 + time * .73;
+        const rise = (i * .137 + time * .62) % 1;
+        star.position.set(Math.cos(angle)*(1.08-rise*.29),.12+rise*1.92,Math.sin(angle)*(1.08-rise*.29));
+        star.scale.setScalar(Math.sin(rise * Math.PI)*1.18+.15);
+        star.rotation.y = angle;
+      });
+    }
+
     cat.scale.setScalar(size);
     shadow.position.set(cat.position.x,.037,cat.position.z);
     shadow.scale.set(.51*size,.77*size,1);
@@ -194,8 +320,17 @@ function start() {
     animate(performance.now());
   }
 
-  document.addEventListener('marathon-cat-update', ({detail: laps}) => {
-    desiredSize = .74 + .81 * (laps / (laps + 23));
+  document.addEventListener('marathon-cat-update', ({detail:{xp,index,owned,poses}}) => {
+    evolution = index;
+    desiredSize = [.76,.94,1.19,1.42][index] + .3 * (xp / (xp + 25));
+    savedPoses = poses;
+    const next = Object.keys(furnitureSlots).filter(id => owned[id]);
+    if (next.length !== ownedIds.length) {
+      for (const id of next) if (!ownedIds.includes(id)) loadFurniture(id);
+      ownedIds = next;
+      updatePicker();
+    }
+    for (const id of ownedIds) applyPose(id);
     if (!moving || !frame) refresh();
   });
   function updateMotionButton() {
@@ -231,5 +366,5 @@ function start() {
 try {
   start();
 } catch {
-  stageMessage.textContent = 'この端末では3D表示を利用できません。周回を記録すると猫は育ちます。';
+  stageMessage.textContent = 'この端末では3D表示を利用できません。エサをあげると猫は育ちます。';
 }
