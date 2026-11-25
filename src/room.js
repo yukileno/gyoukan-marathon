@@ -95,9 +95,6 @@ function start() {
     for (const y of [1.09,1.94,2.79]) box(rear,'#fffaee',center,y,-edge+.20,2.97,.09,.14);
     box(rear,'#ac815f',center,1.055,-edge+.27,3.14,.10,.28);
   }
-  const rugBorder = oval(world, '#527d73', 0, .006, .48, 2.6, .018, 1.9);
-  const rugBase = oval(world, '#88aaa0', 0, .012, .48, 2.43, .018, 1.73);
-  rugBase.receiveShadow = true;
 
 
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 36),
@@ -249,10 +246,6 @@ function start() {
         root.scale.setScalar(.23);
         models.set(id,root);
         world.add(root);
-        if (id === 'rugRound') {
-          rugBase.visible = false;
-          rugBorder.visible = false;
-        }
         applyPose(id);
         draw();
       }).catch(() => {
