@@ -13,7 +13,7 @@ function start() {
   surface.setAttribute('role', 'img');
   surface.setAttribute('aria-label', '猫が歩き回る3Dの部屋');
   const world = new THREE.Scene();
-  world.background = new THREE.Color('#596c94');
+  world.background = new THREE.Color('#f0dce5');
   const camera = new THREE.PerspectiveCamera(39, 1, .1, 100);
   camera.position.set(15, 12, 19);
   const orbit = new OrbitControls(camera, surface);
@@ -75,18 +75,33 @@ function start() {
   const rear = new THREE.Group();
   const left = new THREE.Group();
   world.add(rear, left);
+  const wallpaperWalls = [];
   for (const wall of [rear,left]) {
     if (wall === left) wall.rotation.y = Math.PI / 2;
     const plaster = box(wall, '#ede0ca', 0, 1.54, -edge, roomWidth, 3.08, .16);
     plaster.receiveShadow = true;
-    box(wall, '#d4bb9e', 0,.47,-edge+.09,roomWidth,.94,.09);
+    wallpaperWalls.push(plaster.material);
+    box(wall, '#e7bdc6', 0,.47,-edge+.09,roomWidth,.94,.09);
     box(wall, '#fff5e4', 0,.95,-edge+.16,roomWidth,.085,.10);
-    box(wall, '#aa7f60', 0,.09,-edge+.15,roomWidth,.18,.13);
+    box(wall, '#bb8d76', 0,.09,-edge+.15,roomWidth,.18,.13);
     box(wall, '#fff4dd', 0,3.01,-edge+.13,roomWidth,.12,.09);
     for (let x = -7.7; x <= 7.8; x += .86) {
-      box(wall,'#bd9e81',x,.50,-edge+.142,.022,.72,.022);
+      box(wall,'#cba4b0',x,.50,-edge+.142,.022,.72,.022);
     }
   }
+  new THREE.TextureLoader().load('art/cat-wallpaper.webp', texture => {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.repeat.set(5,1);
+    texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    for (const material of wallpaperWalls) {
+      material.color.set('#ffffff');
+      material.map = texture;
+      material.needsUpdate = true;
+    }
+    draw();
+  });
+
   for (const center of [-4.2,4.2]) {
     const glass = box(rear,'#a4ccde',center,1.94,-edge+.12,2.8,1.61,.08);
     glass.material.emissive.set('#7da5c2');

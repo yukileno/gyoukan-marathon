@@ -1,0 +1,133 @@
+:root {
+  color-scheme: light;
+  --ink: #4a3443;
+  --muted: #6b5363;
+  --rose: #a73860;
+  --peach: #fff4ed;
+  --petal: #f2d6e2;
+  --gold: #b27727;
+}
+body {
+  color: var(--ink);
+  background: radial-gradient(ellipse at 0 0,#fce0e8,transparent 42%),
+    radial-gradient(ellipse at 100% 25%,#ede4fb,transparent 44%), #fff8f0;
+  background-attachment: fixed;
+}
+main { padding-top: 16px; }
+.game-header {
+  position: relative;
+  min-height: clamp(152px,29vw,235px);
+  padding: clamp(15px,4.2vw,36px);
+  margin-bottom: 13px;
+  align-items: flex-start;
+  isolation: isolate;
+  border: 1px solid #e9b9cb;
+  border-radius: 26px;
+  background: #fce5e9 url('art/cat-header.webp') center 52% / cover no-repeat;
+  box-shadow: 0 5px 0 #f0cadc, 0 12px 26px #a8678b20;
+}
+.game-header h1 {
+  margin-top: .17em;
+  max-width: 64%;
+  color: #653148;
+  font-size: clamp(25px,6.4vw,49px);
+  line-height: 1.17;
+  text-wrap: balance;
+  word-break: auto-phrase;
+  text-shadow: 0 2px #fff7f3, 0 0 18px #fff8f2;
+}
+.wallet {
+  position: absolute;
+  bottom: 12px;
+  left: clamp(15px,4.2vw,36px);
+  color: #704a20;
+  background: #fff8e8;
+  border: 1px solid #dba95d;
+  min-width: 0;
+  padding: 5px 10px;
+  grid-template-columns: auto auto auto;
+  gap: 5px;
+  box-shadow: 0 2px 0 #e6bd7d;
+}
+.wallet span { color: #ac6f23; text-shadow: none; }
+.wallet small { grid-column: auto; }
+.wallet strong { font-size: 1.06rem; }
+.game-nav {
+  background: #fff7f8;
+  border: 1px solid #efc6d7;
+  box-shadow: 0 3px 6px #8f52701a;
+}
+.game-nav a { color: #75455c; }
+.game-nav a:hover,.game-nav a:focus-visible { background: #f9deea; color: #6b2442; }
+section {
+  background: #fffdf8;
+  border-color: #ecd0db;
+  box-shadow: 0 5px 0 #f5dce6, 0 9px 18px #a8678b12;
+}
+h2,h3 { color: #65334d; }
+.eyebrow { color: #86436a; }
+.mission { background: linear-gradient(115deg,#fff6e8,#fce4ef); }
+.entry-heading h2,.laps strong { color: #6d304d; }
+.entry-heading time,.entry-form #runHelp,.laps { color: var(--muted); }
+.entry-form button {
+  color: #fff;
+  background: linear-gradient(110deg,#b33d6a,#aa3554);
+  box-shadow: 0 4px 0 #80264a;
+}
+.run-reward,.mission #error { color: #941d4f; }
+.locked { background: #dcf4e8; color: #29644f; }
+button { background: #ffdfe9; color: #722749; }
+button.quiet { background: #f5e9f5; color: #633c68; }
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible { outline-color: #8d4880; }
+button:disabled { opacity: .67; }
+input,select { color: var(--ink); background: #fffdfc; border-color: #c494ad; }
+.entry-input input::placeholder { color: #7c6675; }
+.room-heading > div,.shop-heading { position: relative; padding-left: 49px; }
+.room-heading > div::before,.shop-heading::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 41px;
+  height: 41px;
+  background: url('art/paw-medallion.webp') center / contain no-repeat;
+}
+#scene {
+  background: #eed8df;
+  border: 2px solid #edc4d6;
+  box-shadow: 0 3px 0 #f8e3e6;
+}
+.level-chip { color: #673950; background: #fff6edee; box-shadow: 0 2px 4px #8d5d6526; }
+.level-chip span { color: #8b4d27; }
+#roomMode,#furnitureHint { color: var(--muted); }
+.growth { background: #f9e8f3; color: #633a59; }
+.growth progress { accent-color: #ab4d7f; }
+#catStatus,#shopStatus { color: #8b315c; }
+.shop-count,.price { color: #825318; }
+.shop-card {
+  background: linear-gradient(145deg,#fffaf0,#f8e7f4);
+  border-color: #ebcbdc;
+  box-shadow: 0 2px 0 #efd5e2;
+}
+.shop-card p { color: #684e60; }
+.shop-card button { border: 1px solid #edbad1; }
+#foods .item-icon {
+  background: radial-gradient(ellipse at 50% 45%,#fff9e9,#f2dce8 72%,#ead3ed);
+}
+#foods .item-icon img { filter: drop-shadow(0 4px 4px #915d622f); }
+.teacher-open { border-color: #d2a5c1; box-shadow: 0 3px 10px #75496024; }
+#teacherDialog { color: var(--ink); background: #fff8f7; border-color: #e8bdcf; box-shadow: 0 12px 40px #71475e59; }
+#teacherDialog::backdrop { background: #51324975; }
+.teacher-help { color: var(--muted); }
+#teacherStatus { color: #88501f; }
+@media (max-width:360px) {
+  .game-header { min-height: 148px; }
+  .game-header h1 { max-width: 66%; }
+  .room-heading { gap: 6px; }
+  .room-heading button { padding-inline: 9px; }
+}
+@media print {
+  body,main,section { background: white; }
+  main { padding-top: 0; }
+  section { box-shadow: none; }
+}

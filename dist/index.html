@@ -34,6 +34,7 @@ body{padding-bottom:52px}.teacher-open{position:fixed;bottom:max(12px,env(safe-a
 @media print{body{padding:0}.teacher-open,#teacherDialog{display:none!important}}
 
 </style>
+<link rel="stylesheet" href="theme.css">
 <main>
 <header class="game-header">
 <h1>業間マラソンの足跡</h1>
@@ -69,7 +70,7 @@ body{padding-bottom:52px}.teacher-open{position:fixed;bottom:max(12px,env(safe-a
 <div class="growth"><p id="catGoal"></p><progress id="catProgress" aria-label="次の進化までの成長ポイント"></progress></div>
 <p id="catStatus" role="status"></p>
 </section>
-<section id="shop"><p class="eyebrow">アイテムショップ</p><h2>エサと家具</h2>
+<section id="shop"><div class="shop-heading"><p class="eyebrow">アイテムショップ</p><h2>エサと家具</h2></div>
 <h3>エサをあげる <span class="shop-count">5種類</span></h3><div id="foods" class="shop-grid"></div>
 <h3>部屋をかざる <span class="shop-count">30種類</span></h3>
 <div class="row shop-filter"><label for="shopCategory">家具の種類</label><select id="shopCategory">

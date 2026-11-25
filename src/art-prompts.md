@@ -9,3 +9,16 @@ ChatGPTの組み込み画像生成を使用。エサのスプライトシート�
 ## 床
 
 > Single square seamless tileable photorealistic PBR base-color image for parquet flooring, completely flat perpendicular overhead orthographic texture, warm light honey oak tongue and groove straight narrow planks running horizontally across the entire image, mild natural grain and small occasional knots, dark delicate seams, 8 rows of equal plank widths, staggered joins, continuous edge matching. Physically plausible texture to apply to a 3D cozy cat room. Diffuse colour only, no perspective, no shadows, no baked reflections, no objects, no letters. Warm realistic oak, high detail.
+
+
+## ヘッダー
+
+> Create a wide landscape premium cozy Japanese cat-raising mobile game header illustration with absolutely no text, no logo, no UI. Very wide crop friendly, 3:1 composition. On right third only, smiling original round-faced small ginger tabby cat sitting near a pale lavender cushion and a cluster of light coral flowers, with a few pastel paw prints, warm sun rays. Left two thirds is a very pale cream and blush pink soft open field with little fine dotted motifs barely visible, safe for very dark text overlay. Tiny spots of sky mint and wisteria. Style polished hand-painted picture-book art, bright, textured parchment and soft light, warm school-friendly whimsical character, clean and sophisticated, no existing character likeness. Do not place important elements on top or bottom 15 percent. Edge to edge illustration.
+
+## 3Dの壁紙
+
+> Seamless square wallpaper material texture for a cozy cat room 3D game. Orthographic flat scan, material albedo only, no perspective, no shadows, no scene. Warm ivory paper with a superb delicate French toile-style repeating pattern of small dusty rose paw prints and slender mint-green hand-drawn botanical sprigs, arranged in an airy offset diamond repeat; touches of faded gold on leaves. Very subtle flax fibers and elegantly printed detail. Expensive boutique wallpaper, bright, low contrast, uncluttered, consistently colored edges for tile repetition, no letters or framing. Entire square covered with the repeating pattern.
+
+## 肉球の飾り
+
+> One isolated decorative cutout sticker asset for a premium cheerful Japanese cozy cat raising game, transparent background, centered paw portrait medallion: a cream and coral pink cat paw pad with a delicate pale golden ring around it, two mint leaves and a small wisteria flower at bottom. Whimsical soft hand painted picture-book style, precise, bright warm cream and coral pastel palette, clean smooth shape, no text or numbers, minimal shadow, ample transparent margin on all sides. Square asset.
