@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>行間マラソン</title>
+<html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>業間マラソン</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#fff6e6;color:#183c31;font:16px system-ui,sans-serif}main{max-width:760px;margin:auto;padding:24px 16px}header,section{padding:24px;border-radius:22px;margin-bottom:16px}header,button,a{background:#185542;color:white}h1,h2{margin:0 0 12px}h1{font-size:clamp(28px,7vw,55px);margin:0}section{background:white;border:1px solid #e2d9c6}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}input{display:block;padding:8px;border:1px solid #85988d;border-radius:8px;font:inherit;max-width:100%}button,a{border:0;border-radius:10px;padding:12px 18px;font:inherit;font-weight:bold;text-decoration:none;cursor:pointer}button:disabled{opacity:.45}#count{font-size:52px}canvas{display:block;width:100%;height:auto;margin:14px 0}[hidden]{display:none!important}
+*{box-sizing:border-box}body{margin:0;background:#fff6e6;color:#183c31;font:16px system-ui,sans-serif}main{max-width:760px;margin:auto;padding:24px 16px}header,section{padding:24px;border-radius:22px;margin-bottom:16px}header,button{background:#185542;color:white}h1,h2{margin:0 0 12px}h1{font-size:clamp(28px,7vw,55px);margin:0}section{background:white;border:1px solid #e2d9c6}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}input{display:block;padding:8px;border:1px solid #85988d;border-radius:8px;font:inherit;max-width:100%}button{border:0;border-radius:10px;padding:12px 18px;font:inherit;font-weight:bold;text-decoration:none;cursor:pointer}button:disabled{opacity:.45}#count{font-size:52px}canvas{display:block;width:100%;height:auto;margin:14px 0}[hidden]{display:none!important}
 @media print{@page{size:A4 landscape;margin:8mm}body{background:white}main,section{max-width:none;margin:0;padding:0;border:0}header,#record,h2,form,#actions{display:none!important}canvas{margin:0;max-height:190mm;object-fit:contain}}
 </style>
-<main><header><h1>行間マラソン</h1></header>
+<main><header><h1>業間マラソン</h1></header>
 <section id="record"><h2>今日の記録</h2><div id="today"></div><p aria-live="polite"><strong id="count">0</strong> 周</p><div class="row"><button id="plus">＋1周</button><button id="minus">−1周</button></div><p>これまで <b id="all">0</b> 周</p><p id="error" role="alert"></p><details><summary>日別の記録</summary><ul id="history"></ul></details></section>
 <section><h2>賞状を作る</h2><form id="form"><div class="row"><label>名前<input id="student" maxlength="30" required></label><label>開始日<input id="start" type="date" required></label><label>終了日<input id="end" type="date" required></label><button>賞状を表示</button></div><p id="message" role="status"></p></form>
-<div id="preview" hidden><canvas id="award" width="2480" height="1754" role="img"></canvas><div id="actions"><div class="row"><a id="save" download>PNG画像を保存</a><button id="print">印刷する</button></div><p>ロイロノートに提出するときは、保存した画像を提出箱に入れてください。</p></div></div></section></main>
+<div id="preview" hidden><canvas id="award" width="2480" height="1754" role="img"></canvas><div id="actions"><div class="row"><button id="copy">賞状の画像をコピー</button><button id="print">印刷する</button></div><p id="copyStatus" role="status"></p><p>ロイロノートに提出するときは、コピーした画像をノートに貼り付けてから提出してください。</p></div></div></section></main>
 <script>
 const el = id => document.getElementById(id);
 const storageKey = 'gyoukan-marathon-v1';
@@ -38,7 +38,7 @@ function render() {
 }
 function hidePreview() {
   el('preview').hidden = true;
-  el('save').removeAttribute('href');
+  el('copyStatus').textContent = '';
   el('message').textContent = '';
 }
 function record(delta) {
@@ -63,6 +63,24 @@ el('end').value = today();
 el('plus').onclick = () => record(1);
 el('minus').onclick = () => record(-1);
 el('print').onclick = () => window.print();
+el('copy').onclick = async () => {
+  const button = el('copy');
+  const status = el('copyStatus');
+  button.disabled = true;
+  status.textContent = '';
+  try {
+    const png = new Promise((resolve, reject) => el('award').toBlob(blob => {
+      if (blob) resolve(blob);
+      else reject(new Error('PNG encoding failed'));
+    }, 'image/png'));
+    await navigator.clipboard.write([new ClipboardItem({'image/png': png})]);
+    status.textContent = '賞状の画像をコピーしました。';
+  } catch {
+    status.textContent = '画像をコピーできませんでした。ブラウザのクリップボード設定を確認してください。';
+  } finally {
+    button.disabled = false;
+  }
+};
 el('form').oninput = hidePreview;
 window.addEventListener('focus', render);
 render();
@@ -96,15 +114,13 @@ el('form').onsubmit = event => {
     ctx.textAlign = 'center';
     ctx.fillText(text, 1240, y, 2040);
   }
-  line('行間マラソン', 310, 72);
+  line('業間マラソン', 310, 72);
   line('賞 状', 545, 180);
   line(name + ' さん', 755, 96);
   line('合計 ' + laps + ' 周', 1080, 180);
   line(dateText(start) + ' 〜 ' + dateText(end), 1240, 62);
-  line('行間マラソンでのがんばりをたたえます。', 1460, 56);
+  line('業間マラソンでのがんばりをたたえます。', 1460, 56);
   canvas.setAttribute('aria-label', name + 'さん、' + start + 'から' + end + 'まで、合計' + laps + '周');
-  el('save').href = canvas.toDataURL('image/png');
-  el('save').download = '行間マラソン賞状_' + start + '_' + end + '.png';
   el('preview').hidden = false;
 };
 </script></html>
