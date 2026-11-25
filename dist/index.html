@@ -6,7 +6,22 @@
 .wallet{display:grid;grid-template-columns:auto auto;column-gap:6px;align-items:center;justify-content:center;min-width:94px;text-align:center;background:#352951;padding:8px 12px;border:1px solid #deab60;border-radius:16px;color:#ffe09b;font-variant-numeric:tabular-nums}.wallet span{color:#ffc456;text-shadow:0 0 10px #ffb649}.wallet strong{font-size:1.25rem}.wallet small{grid-column:1/-1;font-weight:bold}
 .game-nav{position:sticky;top:0;z-index:3;display:flex;gap:5px;margin-bottom:12px;padding:6px;border:1px solid #526295;border-radius:14px;background:#131c37}.game-nav a{flex:1;text-align:center;text-decoration:none;color:#f4f4ff;font-weight:750;padding:9px 3px;border-radius:8px}.game-nav a:hover,.game-nav a:focus-visible{background:#354274}
 button{border:0;border-radius:12px;background:#a0f1db;color:#123b35;padding:11px 14px;font:inherit;font-weight:840;cursor:pointer}button.quiet{background:#303d65;color:#f9f6ff}button:disabled{opacity:.58;cursor:default}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #ffe09b;outline-offset:2px}
-.mission{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;background:linear-gradient(125deg,#263e6b,#463365)}.mission-action{display:grid;gap:8px}.mission-action #plus{background:#ffcd70;color:#392654;box-shadow:0 4px 0 #b86a69}.laps{margin:0;color:#ede7fd}.laps strong{font-size:clamp(35px,9vw,64px);line-height:1.02;color:white}.run-reward{color:#ffe09b;font-weight:700;margin:0}.reward-pop{animation:reward .35s ease-out}@keyframes reward{from{transform:translateY(3px) scale(.91);opacity:.65}to{transform:none;opacity:1}}.mission details,.mission #error{grid-column:1/-1;margin:0}.mission #error{color:#ffbdc6}
+.game-nav a{font-size:.92rem}
+.mission{display:grid;gap:12px;background:linear-gradient(125deg,#263e6b,#463365)}
+.entry-heading{display:flex;gap:8px 12px;justify-content:space-between;align-items:baseline;flex-wrap:wrap}
+.entry-heading h2{margin:0}.entry-heading time{color:#e6defb;font-variant-numeric:tabular-nums}
+.entry-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center}
+.entry-form label,.entry-form #runHelp{grid-column:1/-1}.entry-form label{font-weight:800}
+.entry-input{display:flex;align-items:center;gap:8px}.entry-input input{font-size:1.22rem;font-weight:800;min-width:0}.entry-input input::placeholder{color:#b5c3e7}
+.entry-form button{background:#ffcd70;color:#392654;box-shadow:0 4px 0 #b86a69;padding-inline:12px}
+.entry-form #runHelp{color:#f0eaff;font-size:.88rem;margin:4px 0 0}
+.confirmed-run p{margin:0}.laps strong{font-size:clamp(35px,9vw,64px);line-height:1.05;color:white}
+.locked{font-size:.88rem;vertical-align:middle;color:#a4f4de;background:#183b47;border-radius:999px;padding:4px 8px;margin-left:5px}
+.run-reward{color:#ffe09b;font-weight:700;margin:0}.run-reward:empty{display:none}
+.reward-pop{animation:reward .35s ease-out}@keyframes reward{from{transform:translateY(3px) scale(.91);opacity:.65}to{transform:none;opacity:1}}
+.mission details,.mission #error{margin:0}.mission #error{color:#ffbdc6}
+@media(max-width:450px){.entry-form{grid-template-columns:1fr}.entry-form button{min-height:46px}.entry-input input{max-width:130px}}
+
 .row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.room-heading h2{margin:0 0 12px;overflow-wrap:anywhere}.room-heading button{flex-shrink:0}input,select{display:block;width:100%;max-width:100%;padding:9px;border:1px solid #7586bd;border-radius:9px;font:inherit;color:white;background:#101a36}#nameForm,#decorate{margin:8px 0 12px}#furnitureHint{font-size:.85rem;color:#c7d6fb}
 #scene{position:relative;isolation:isolate;aspect-ratio:1.55;overflow:hidden;border-radius:18px;background:#3f5f70}.cat-placeholder{display:grid;place-items:center;position:absolute;inset:0;font-size:clamp(60px,19vw,123px)}.room-3d .cat-placeholder{display:none}.room-3d canvas{position:absolute;inset:0;width:100%;height:100%;margin:0;touch-action:none;cursor:grab}.room-3d canvas:active{cursor:grabbing}.level-chip{position:absolute;z-index:1;left:9px;top:9px;padding:6px 10px;border-radius:10px;background:#141c37e8;color:#fff;display:grid;line-height:1.2;pointer-events:none}.level-chip span{font-size:.77rem;color:#fbd47c;font-weight:850}.level-chip strong{font-size:.9rem}.growth{margin-top:13px;background:#111a34;border-radius:12px;padding:11px 13px}.growth p{margin:0}.growth progress{width:100%;height:14px;accent-color:#b183ff}#roomMode{margin:.7em 0;color:#c7d6fb;font-size:.85rem}#catStatus,#shopStatus{color:#aef3df;font-weight:800;margin:8px 0 0}#catStatus:empty,#shopStatus:empty{display:none}
 .shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,142px),1fr));gap:9px}.shop-card{padding:12px;border-radius:15px;background:linear-gradient(155deg,#394b77,#282649);border:1px solid #6778a8;display:flex;flex-direction:column;gap:6px}.shop-card p{margin:0;font-size:.83rem;color:#e0e3fa}.shop-card button{margin-top:auto;font-size:.88rem;padding:8px 5px}.item-icon{display:grid;place-items:center;height:48px;font-size:34px}.item-icon img{max-height:48px;max-width:67px}.price{color:#ffe09b;font-size:.85rem;font-weight:750}#certificate canvas{display:block;width:100%;height:auto;margin:14px 0}[hidden]{display:none!important}
@@ -19,11 +34,20 @@ button{border:0;border-radius:12px;background:#a0f1db;color:#123b35;padding:11px
 <div><p class="eyebrow">ねこ育成ゲーム</p><h1>業間マラソン</h1></div>
 <div class="wallet" aria-label="持っているコイン"><span aria-hidden="true">●</span><strong id="coins">0</strong><small>コイン</small></div>
 </header>
-<nav class="game-nav" aria-label="ゲームのメニュー"><a href="#room">ねこの部屋</a><a href="#shop">ショップ</a><a href="#certificate">賞状</a></nav>
+<nav class="game-nav" aria-label="ゲームのメニュー"><a href="#record">周回入力</a><a href="#room">ねこの部屋</a><a href="#shop">ショップ</a><a href="#certificate">賞状</a></nav>
 <section id="record" class="mission">
-<div><p class="eyebrow">今日のラン</p><div id="today"></div><p class="laps" aria-live="polite"><strong id="count">0</strong> <span>/ 12 周</span></p></div>
-<div class="mission-action"><button id="plus">＋1周を記録</button><button id="minus" class="quiet">1周取り消す</button></div>
-<p id="runReward" class="run-reward" role="status">1周で10コイン</p>
+<div class="entry-heading"><h2>今日の周回数</h2><time id="today"></time></div>
+<form id="runForm" class="entry-form">
+<label for="lapInput">何周走った？</label>
+<div class="entry-input"><input id="lapInput" type="number" inputmode="numeric" min="1" max="12" step="1" required placeholder="1〜12" aria-describedby="runHelp"><span>周</span></div>
+<button id="confirmRun">確定してコインを受け取る</button>
+<p id="runHelp">1〜12周。1周で10コイン。確定後は変更できません。</p>
+</form>
+<div id="confirmedRun" class="confirmed-run" hidden>
+<p class="laps"><strong id="count"></strong> 周 <span class="locked">確定済み</span></p>
+<p>今日の周回数は確定しました。</p>
+</div>
+<p id="runReward" class="run-reward" role="status"></p>
 <p id="error" role="alert" hidden></p>
 <details><summary>日別の記録 ・ 合計 <b id="all">0</b> 周</summary><ul id="history"></ul></details>
 </section>
@@ -54,17 +78,25 @@ const today = () => new Intl.DateTimeFormat('sv-SE', {timeZone:'Asia/Tokyo'}).fo
 const dateText = day => day.replaceAll('-', '/');
 const dates = () => Object.keys(records).sort();
 const sum = days => days.reduce((total, day) => total + records[day], 0);
+function readRecords() {
+  const stored = JSON.parse(localStorage.getItem(storageKey) || '{}');
+  return Object.fromEntries(Object.entries(stored).filter(([day, laps]) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(day) && Number.isSafeInteger(laps) && laps > 0));
+}
 let records = {};
 let recordsReadable = true;
-try {
-  const stored = JSON.parse(localStorage.getItem(storageKey) || '{}');
-  records = Object.fromEntries(Object.entries(stored).filter(([day, laps]) =>
-    /^\d{4}-\d{2}-\d{2}$/.test(day) && Number.isSafeInteger(laps) && laps > 0));
-} catch {
-  setError('保存した記録を読み込めませんでした。');
-  recordsReadable = false;
-  el('plus').disabled = true;
+let draftDay;
+let confirming = false;
+function refreshRecords() {
+  try {
+    records = readRecords();
+    recordsReadable = true;
+  } catch {
+    recordsReadable = false;
+    setError('保存した記録を読み込めませんでした。');
+  }
 }
+refreshRecords();
 const foods = [
   {id:'kibble', name:'カリカリ', icon:'🥣', cost:20, xp:1},
   {id:'fish', name:'おさかな', icon:'🐟', cost:40, xp:3},
@@ -218,10 +250,18 @@ document.addEventListener('marathon-place-furniture', ({detail:{id, pose}}) => {
 
 function render() {
   const day = today();
+  if (draftDay !== day) {
+    draftDay = day;
+    el('lapInput').value = '';
+    el('runReward').textContent = '';
+  }
+  el('today').dateTime = day;
   el('today').textContent = dateText(day);
-  el('count').textContent = records[day] || 0;
-  el('minus').disabled = !recordsReadable || !records[day];
-  el('plus').disabled = !recordsReadable || (records[day] || 0) >= 12;
+  const confirmed = Boolean(records[day]);
+  el('runForm').hidden = confirmed;
+  el('confirmedRun').hidden = !confirmed;
+  el('count').textContent = confirmed ? records[day] : '';
+  el('confirmRun').disabled = !recordsReadable || confirming;
   const total = sum(dates());
   el('all').textContent = total;
   renderCat();
@@ -237,18 +277,18 @@ function hidePreview() {
   el('copyStatus').textContent = '';
   el('message').textContent = '';
 }
-function record(delta) {
-  const day = today();
-  const count = records[day] || 0;
-  if (!recordsReadable || (delta > 0 && count >= 12) || (delta < 0 && !count)) return;
-  if (delta < 0 && balance() < 10) {
-    setError('残り10コイン以上あるときに、1周を取り消せます。');
+function confirmRun(day, laps) {
+  refreshRecords();
+  if (!recordsReadable) return;
+  if (today() !== day) {
+    setError('日付が変わりました。今日の周回数を入力してください。');
     return;
   }
-  const updated = {...records};
-  const laps = (updated[day] || 0) + delta;
-  if (laps > 0) updated[day] = laps;
-  else delete updated[day];
+  if (records[day]) {
+    setError('');
+    return;
+  }
+  const updated = {...records, [day]:laps};
   try {
     localStorage.setItem(storageKey, JSON.stringify(updated));
   } catch {
@@ -258,17 +298,33 @@ function record(delta) {
   records = updated;
   setError('');
   hidePreview();
-  const reward = el('runReward');
-  reward.textContent = delta < 0 ? '1周取り消し・−10コイン' :
-    laps === 12 ? '＋10コイン！ 今日の上限12周に到達' : '＋10コイン！';
-  reward.classList.remove('reward-pop');
-  requestAnimationFrame(() => reward.classList.add('reward-pop'));
-  render();
+  el('runReward').textContent = '＋' + laps * 10 + 'コインを受け取りました！';
+  el('runReward').classList.add('reward-pop');
 }
+el('runForm').onsubmit = async event => {
+  event.preventDefault();
+  const day = draftDay;
+  const laps = el('lapInput').valueAsNumber;
+  if (confirming || !Number.isInteger(laps) || laps < 1 || laps > 12) return;
+  confirming = true;
+  el('confirmRun').disabled = true;
+  try {
+    if (navigator.locks) await navigator.locks.request(storageKey, () => confirmRun(day, laps));
+    else confirmRun(day, laps);
+  } catch {
+    setError('確定できませんでした。もう一度お試しください。');
+  } finally {
+    confirming = false;
+    render();
+  }
+};
+el('lapInput').oninput = () => {
+  const laps = el('lapInput').valueAsNumber;
+  el('confirmRun').textContent = Number.isInteger(laps) && laps >= 1 && laps <= 12 ?
+    '確定して ' + laps * 10 + ' コインを受け取る' : '確定してコインを受け取る';
+};
 el('start').value = dates()[0] || today();
 el('end').value = today();
-el('plus').onclick = () => record(1);
-el('minus').onclick = () => record(-1);
 el('print').onclick = () => window.print();
 el('copy').onclick = async () => {
   const button = el('copy');
@@ -290,7 +346,14 @@ el('copy').onclick = async () => {
 };
 el('form').oninput = hidePreview;
 document.addEventListener('marathon-cat-ready', renderCat);
-window.addEventListener('focus', () => render());
+window.addEventListener('focus', () => { refreshRecords(); render(); });
+window.addEventListener('storage', event => {
+  if (event.key === storageKey || event.key === null) {
+    refreshRecords();
+    hidePreview();
+    render();
+  }
+});
 render();
 el('form').onsubmit = event => {
   event.preventDefault();
