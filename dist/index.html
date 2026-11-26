@@ -41,6 +41,10 @@ body{padding-bottom:52px}.teacher-open{position:fixed;bottom:max(12px,env(safe-a
 <div class="wallet" aria-label="持っているコイン"><span aria-hidden="true">●</span><strong id="coins">0</strong><small>コイン</small></div>
 </header>
 <nav class="game-nav" aria-label="ゲームのメニュー"><a href="#record">周回入力</a><a href="#room">ねこの部屋</a><a href="#shop">ショップ</a><a href="#certificate">賞状</a></nav>
+<div id="previewBanner" class="preview-banner" hidden>
+<strong>先生の試用モード・コイン無制限</strong>
+<button type="button" id="previewEnd" class="quiet">試用を終了</button>
+</div>
 <section id="record" class="mission">
 <div class="entry-heading"><h2>今日の周回数</h2><time id="today"></time></div>
 <form id="runForm" class="entry-form">
@@ -93,6 +97,10 @@ body{padding-bottom:52px}.teacher-open{position:fixed;bottom:max(12px,env(safe-a
 <p class="teacher-help">0〜12周。1周につき残高が10コイン増減します。</p>
 <button id="teacherSave">修正を保存する</button>
 </form>
+<div id="teacherPreview" class="teacher-preview" hidden>
+<button type="button" id="previewStart">無制限コインで試す</button>
+<p id="previewHelp" class="teacher-help">試用中の買い物や育成は、終了時に元に戻ります。</p>
+</div>
 <p id="teacherStatus" role="status"></p>
 </dialog>
 </main>
@@ -164,6 +172,7 @@ const furniture = [
 const gameKey = 'gyoukan-marathon-cat-game-v1';
 const costOf = (items, owned) => items.reduce((cost, item) => cost + item.cost * (owned[item.id] || 0), 0);
 let game = {name:'', fed:{}, owned:{}, poses:{}};
+let gameBeforePreview = null;
 try {
   const saved = JSON.parse(localStorage.getItem(gameKey) || 'null');
   if (saved) game = saved;
@@ -184,6 +193,10 @@ function setError(text) {
   el('error').hidden = !text;
 }
 function saveGame(next) {
+  if (gameBeforePreview) {
+    game = next;
+    return true;
+  }
   try {
     localStorage.setItem(gameKey, JSON.stringify(next));
     game = next;
@@ -212,7 +225,7 @@ function renderCat() {
   document.dispatchEvent(new CustomEvent('marathon-cat-update', {detail:{xp, index, owned:game.owned, poses:game.poses, furniture}}));
 }
 function buy(item, isFood) {
-  if (balance() < item.cost || (!isFood && game.owned[item.id])) return;
+  if ((!gameBeforePreview && balance() < item.cost) || (!isFood && game.owned[item.id])) return;
   const previous = stageIndex(growth());
   const field = isFood ? 'fed' : 'owned';
   const counts = {...game[field], [item.id]:(game[field][item.id] || 0) + 1};
@@ -268,8 +281,8 @@ function renderFurnitureShop() {
 el('shopCategory').onchange = renderFurnitureShop;
 makeShop(furniture,false,el('wares'));
 function renderShop() {
-  const coins = balance();
-  el('coins').textContent = coins;
+  const coins = gameBeforePreview ? Infinity : balance();
+  el('coins').textContent = gameBeforePreview ? '∞' : coins;
   for (const item of [...foods,...furniture]) {
     const button = shopButtons.get(item.id);
     if (!button) continue;
@@ -410,6 +423,7 @@ el('teacherOpen').onclick = () => {
   el('teacherGate').reset();
   el('teacherGate').hidden = false;
   el('teacherEdit').hidden = true;
+  el('teacherPreview').hidden = true;
   el('teacherDay').replaceChildren();
   teacherStatus.textContent = '';
   teacherDialog.showModal();
@@ -431,6 +445,7 @@ el('teacherGate').onsubmit = event => {
   el('teacherGate').reset();
   el('teacherGate').hidden = true;
   el('teacherEdit').hidden = false;
+  el('teacherPreview').hidden = false;
   teacherStatus.textContent = '';
   loadTeacherDays();
   el('teacherDay').focus();
@@ -471,6 +486,30 @@ el('teacherEdit').onsubmit = async event => {
   } finally {
     el('teacherSave').disabled = false;
     render();
+  }
+};
+
+function endTeacherPreview() {
+  if (!gameBeforePreview) return;
+  game = gameBeforePreview;
+  gameBeforePreview = null;
+  el('previewBanner').hidden = true;
+  el('catStatus').textContent = '';
+  el('shopStatus').textContent = '';
+  el('previewStart').textContent = '無制限コインで試す';
+  render();
+}
+el('previewEnd').onclick = endTeacherPreview;
+el('previewStart').onclick = () => {
+  if (!teacherUnlocked || !teacherDialog.open) return;
+  if (gameBeforePreview) endTeacherPreview();
+  else {
+    gameBeforePreview = game;
+    el('previewBanner').hidden = false;
+    el('previewStart').textContent = '無制限モードを終了';
+    teacherDialog.close();
+    render();
+    el('previewBanner').scrollIntoView({block:'nearest'});
   }
 };
 

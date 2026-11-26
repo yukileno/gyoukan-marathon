@@ -133,3 +133,8 @@ input,select { color: var(--ink); background: #fffdfc; border-color: #c494ad; }
 }
 
 .cat-activity{margin:.65em 0 0;color:#86436a;font-weight:800}.cat-activity:empty{display:none}
+
+.preview-banner,.teacher-preview{margin:0 0 12px;padding:10px 12px;background:#f0e8fb;border:1px solid #d9c1eb;border-radius:12px;color:#633c68}
+.preview-banner{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;scroll-margin-top:64px}
+.teacher-preview{margin:12px 0 0}.teacher-preview p{margin:.5em 0 0}
+@media print{.preview-banner{display:none!important}}

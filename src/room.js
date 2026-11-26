@@ -247,6 +247,7 @@ function start() {
     new MTLLoader().setPath(folder).loadAsync(id + '.mtl')
       .then(materials => new OBJLoader().setPath(folder).setMaterials(materials).loadAsync(id + '.obj'))
       .then(model => {
+        if (!ownedIds.includes(id) || models.has(id)) return;
         const bounds = new THREE.Box3().setFromObject(model);
         const center = bounds.getCenter(new THREE.Vector3());
         model.position.set(-center.x,-bounds.min.y,-center.z);
@@ -392,7 +393,7 @@ function start() {
     let amount = 0;
     if (destination) {
       const model = models.get(destination.id);
-      if (model.position.x !== destination.x || model.position.z !== destination.z ||
+      if (!model || model.position.x !== destination.x || model.position.z !== destination.z ||
           (destination.kind === 'nap' && model.rotation.y !== destination.angle)) {
         destination = undefined;
         chooseDestination();
@@ -508,9 +509,27 @@ function start() {
       furnitureSlots[id] ??= outerSlots[i - 4];
     });
     const next = furniture.filter(item => owned[item.id]).map(item => item.id);
-    if (next.length !== ownedIds.length) {
-      for (const id of next) if (!ownedIds.includes(id)) loadFurniture(id);
+    if (next.length !== ownedIds.length || next.some(id => !ownedIds.includes(id))) {
+      const previous = ownedIds;
       ownedIds = next;
+      for (const id of previous) {
+        if (!next.includes(id)) {
+          const model = models.get(id);
+          if (model) world.remove(model);
+          models.delete(id);
+          furnitureBounds.delete(id);
+          if (destination?.id === id) {
+            destination = undefined;
+            cat.position.y = 0;
+            body.position.y = 0;
+            body.rotation.z = 0;
+            chooseDestination();
+            setAction('walk');
+          }
+        }
+      }
+      for (const id of next) if (!previous.includes(id)) loadFurniture(id);
+      if (!next.includes(selected)) selected = '';
       updatePicker();
     }
     for (const id of ownedIds) applyPose(id);
