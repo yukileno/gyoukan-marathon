@@ -65,6 +65,10 @@ body{padding-bottom:52px}.teacher-open{position:fixed;bottom:max(12px,env(safe-a
 <div class="room-heading"><div><p class="eyebrow">ねこの部屋</p><h2 id="petName">こはく</h2></div><button id="rename" class="quiet" aria-expanded="false" aria-controls="nameForm">名前をつける</button></div>
 <form id="nameForm" class="row" hidden><label>ねこの名前<input id="nameInput" maxlength="16" required></label><button>名前を保存</button><button type="button" id="nameCancel" class="quiet">キャンセル</button></form>
 <div id="decorate" class="row" hidden><label>家具を動かす<select id="furnitureSelect"><option value="">家具を選ぶ</option></select></label><button id="furnitureTurn" class="quiet" disabled>家具を回す</button><span id="furnitureHint"></span></div>
+<div id="feedPanel" class="feed-panel">
+<div class="row"><label>手持ちのエサ<select id="feedSelect"></select></label><button id="feedCat" type="button" disabled>エサをあげる</button></div>
+<p id="feedStatus" role="status">ショップでエサを買うと、ここからあげられます。</p>
+</div>
 <div id="scene">
 <span class="cat-placeholder" role="img" aria-label="ねこ">🐈</span>
 <div class="level-chip"><span id="catLevel"></span><strong id="catStage"></strong></div>
@@ -171,11 +175,11 @@ const furniture = [
 ];
 const gameKey = 'gyoukan-marathon-cat-game-v1';
 const costOf = (items, owned) => items.reduce((cost, item) => cost + item.cost * (owned[item.id] || 0), 0);
-let game = {name:'', fed:{}, owned:{}, poses:{}};
+let game = {name:'', fed:{}, pantry:{}, owned:{}, poses:{}};
 let gameBeforePreview = null;
 try {
   const saved = JSON.parse(localStorage.getItem(gameKey) || 'null');
-  if (saved) game = saved;
+  if (saved) game = {...game,...saved};
 } catch {
   setError('猫のデータを読み込めませんでした。');
 }
@@ -189,7 +193,7 @@ const stages = [
 }));
 const growth = () => foods.reduce((xp, food) => xp + food.xp * (game.fed[food.id] || 0), 0);
 const stageIndex = xp => stages.findLastIndex(stage => xp >= stage.xp);
-const balance = (laps = sum(dates())) => laps * 10 - costOf(foods, game.fed) - costOf(furniture, game.owned);
+const balance = (laps = sum(dates())) => laps * 10 - costOf(foods, game.fed) - costOf(foods, game.pantry) - costOf(furniture, game.owned);
 function setError(text) {
   el('error').textContent = text;
   el('error').hidden = !text;
@@ -228,27 +232,58 @@ function renderCat() {
   }
   document.dispatchEvent(new CustomEvent('marathon-cat-update', {detail:{xp, index, owned:game.owned, poses:game.poses, furniture}}));
 }
+const pendingPurchases = new Map();
+function celebratePurchase(button) {
+  clearTimeout(pendingPurchases.get(button));
+  button.classList.add('purchase-success');
+  pendingPurchases.set(button,setTimeout(() => {
+    pendingPurchases.delete(button);
+    button.classList.remove('purchase-success');
+    renderShop();
+  },1300));
+}
 function buy(item, isFood) {
   if ((!gameBeforePreview && balance() < item.cost) || (!isFood && game.owned[item.id])) return;
-  const previous = stageIndex(growth());
-  const field = isFood ? 'fed' : 'owned';
+  const field = isFood ? 'pantry' : 'owned';
   const counts = {...game[field], [item.id]:(game[field][item.id] || 0) + 1};
   if (!saveGame({...game, [field]:counts})) return;
+  celebratePurchase(shopButtons.get(item.id));
+  render();
+  const notice = isFood ? item.name + 'を買いました。部屋でエサをあげられます。' : item.name + 'を部屋に置きました。';
+  el('shopStatus').textContent = notice;
+  if (isFood) {
+    el('feedSelect').value = item.id;
+    el('feedStatus').textContent = item.name + 'を ' + game.pantry[item.id] + ' 個持っています。';
+  }
+}
+function renderFeed() {
+  const picker = el('feedSelect');
+  const current = picker.value;
+  const available = foods.filter(food => game.pantry[food.id] > 0);
+  picker.replaceChildren(...available.map(food => new Option(food.name + ' ×' + game.pantry[food.id], food.id)));
+  if (available.some(food => food.id === current)) picker.value = current;
+  if (!available.length) picker.add(new Option('エサを持っていません',''));
+  picker.disabled = !available.length;
+  el('feedCat').disabled = !available.length;
+}
+el('feedCat').onclick = () => {
+  const item = foods.find(food => food.id === el('feedSelect').value);
+  if (!item || !game.pantry[item.id]) return;
+  const previous = stageIndex(growth());
+  const pantry = {...game.pantry,[item.id]:game.pantry[item.id]-1};
+  const fed = {...game.fed,[item.id]:(game.fed[item.id] || 0)+1};
+  if (!saveGame({...game,pantry,fed})) return;
   render();
   const current = stageIndex(growth());
-  const notice = isFood ? (current > previous ? '進化！ ' + stages[current].name + 'になった！' : item.name + 'をあげた！ 成長 +' + item.xp + ' pt') :
-    item.name + 'を部屋に置きました。';
-  el('shopStatus').textContent = notice;
-  el('catStatus').textContent = notice;
-  const scene = el('scene');
-  const pop = document.createElement('span');
-  pop.className = 'reward-pop';
-  pop.style.cssText = 'position:absolute;z-index:2;right:10px;bottom:10px;background:#382763;color:white;padding:8px 12px;border-radius:10px;pointer-events:none';
-  pop.textContent = current > previous ? '✨ 進化！' : isFood ? '+' + item.xp + ' pt' : '家具をゲット！';
-  scene.append(pop);
-  setTimeout(() => pop.remove(), 1300);
-}
+  const notice = item.name + 'を置きました。成長 ＋' + item.xp + ' pt' +
+    (current > previous ? ' ・ ' + stages[current].name + 'に進化！' : '');
+  el('feedStatus').textContent = notice;
+  el('catStatus').textContent = current > previous ? '進化！ ' + stages[current].name + 'になった！' : '';
+  document.dispatchEvent(new CustomEvent('marathon-cat-feed',{detail:item.id}));
+};
+
 const shopButtons = new Map();
+const stockLabels = new Map();
 function makeShop(items, isFood, container) {
   container.replaceChildren(...items.map(item => {
     const card = document.createElement('article');
@@ -272,7 +307,14 @@ function makeShop(items, isFood, container) {
     button.type = 'button';
     button.addEventListener('click', () => buy(item, isFood));
     shopButtons.set(item.id,button);
-    card.append(icon,title,description,price,button);
+    card.append(icon,title,description,price);
+    if (isFood) {
+      const stock = document.createElement('small');
+      stock.className = 'purchase-count';
+      stockLabels.set(item.id,stock);
+      card.append(stock);
+    }
+    card.append(button);
     return card;
   }));
 }
@@ -292,7 +334,10 @@ function renderShop() {
     if (!button) continue;
     const owned = game.owned[item.id];
     button.disabled = Boolean(owned) || coins < item.cost;
-    button.textContent = owned ? '購入済み' : coins < item.cost ? 'あと ' + (item.cost - coins) + ' コイン' : item.xp ? '買ってあげる' : '家具を買う';
+    const stocked = stockLabels.get(item.id);
+    if (stocked) stocked.textContent = '手持ち ' + (game.pantry[item.id] || 0) + ' 個';
+    button.textContent = pendingPurchases.has(button) ? '✓ 購入しました' : owned ? '購入済み' :
+      coins < item.cost ? 'あと ' + (item.cost - coins) + ' コイン' : stocked ? 'エサを買う' : '家具を買う';
     button.setAttribute('aria-label', item.name + '・' + button.textContent);
   }
 }
@@ -341,6 +386,7 @@ function render() {
   el('all').textContent = total;
   renderCat();
   renderShop();
+  renderFeed();
   el('history').replaceChildren(...dates().reverse().map(date => {
     const row = document.createElement('li');
     row.textContent = dateText(date) + '　' + records[date] + '周';
@@ -501,6 +547,8 @@ function endTeacherPreview() {
   el('catStatus').textContent = '';
   el('shopStatus').textContent = '';
   el('previewStart').textContent = '無制限コインで試す';
+  el('feedStatus').textContent = '';
+  document.dispatchEvent(new Event('marathon-cat-meals-reset'));
   render();
 }
 el('previewEnd').onclick = endTeacherPreview;

@@ -431,7 +431,7 @@ function start() {
     ['bedSingle','nap'], ['bedDouble','nap'], ['loungeSofa','nap'],
     ['loungeSofaCorner','nap'], ['benchCushion','nap']
   ]);
-  const labels = {walk:'おさんぽ中', groom:'毛づくろい中', roll:'ラグでごろん', nap:'お昼寝中'};
+  const labels = {walk:'おさんぽ中', groom:'毛づくろい中', roll:'ラグでごろん', nap:'お昼寝中', eat:'エサを食べています'};
   let action = 'walk';
   let actionTime = 0;
   let outing = 0;
@@ -489,6 +489,64 @@ function start() {
     }
     return false;
   }
+  const mealQueue = [];
+  let meal;
+  const bowl = new THREE.Group();
+  world.add(bowl);
+  const dish = mesh(bowl,new THREE.CylinderGeometry(.32,.23,.13,32),'#d487a4',0,.065,0);
+  dish.castShadow = true;
+  const rim = mesh(bowl,new THREE.TorusGeometry(.295,.032,10,32),'#ffe8d9',0,.143,0);
+  rim.rotation.x = Math.PI / 2;
+  oval(bowl,'#e9a7bc',0,.13,0,.265,.022,.265);
+  const foodColor = new THREE.MeshStandardMaterial({color:'#a86736',roughness:.78});
+  const pellets = Array.from({length:12},(_,index) => {
+    const angle = index * 2.4;
+    const radius = .035 * Math.sqrt(index) * 1.7;
+    return oval(bowl,foodColor,Math.cos(angle)*radius,.16+(index%3)*.018,Math.sin(angle)*radius,.05,.041,.043);
+  });
+  bowl.visible = false;
+  const mealColors = {kibble:'#b67a49',fish:'#9ab9c2',feast:'#bc8553',salmon:'#dc865c',royal:'#b75050'};
+
+  function serveMeal() {
+    const food = mealQueue.shift();
+    const forward = [0,1,-1,2,-2,3.14].find(offset => {
+      const angle = heading + offset;
+      const x = cat.position.x + Math.sin(angle)*2.2;
+      const z = cat.position.z + Math.cos(angle)*2.2;
+      return Math.abs(x) < edge-1 && Math.abs(z) < edge-1 && canWalkTo(x,z);
+    });
+    const angle = heading + (forward ?? 0);
+    const distance = forward === undefined ? 0 : 1.45;
+    target.set(cat.position.x + Math.sin(angle)*distance,0,cat.position.z + Math.cos(angle)*distance);
+    const reach = .69 * size + .16;
+    bowl.position.set(
+      THREE.MathUtils.clamp(target.x + Math.sin(angle)*reach,-edge+.4,edge-.4),0,
+      THREE.MathUtils.clamp(target.z + Math.cos(angle)*reach,-edge+.4,edge-.4));
+    meal = {angle};
+    destination = undefined;
+    foodColor.color.set(mealColors[food] || mealColors.kibble);
+    pellets.forEach(pellet => { pellet.visible = true; });
+    bowl.visible = true;
+    setAction('walk');
+  }
+  document.addEventListener('marathon-cat-feed', ({detail}) => {
+    mealQueue.push(detail);
+    if (!meal) serveMeal();
+    if (!moving || !frame) refresh();
+  });
+  document.addEventListener('marathon-cat-meals-reset', () => {
+    mealQueue.length = 0;
+    if (!meal) return;
+    meal = undefined;
+    bowl.visible = false;
+    body.rotation.x = 0;
+    head.position.y = .93;
+    head.rotation.x = 0;
+    chooseDestination();
+    setAction('walk');
+    if (!moving || !frame) refresh();
+  });
+
   function updateCat(dt) {
     time += dt;
     actionTime += dt;
@@ -524,13 +582,31 @@ function start() {
         if (destination?.kind === 'nap') {
           lift = destination.height * THREE.MathUtils.smoothstep(1.2 - distance,0,1.2);
         }
+      } else if (meal) {
+        setAction('eat');
       } else if (destination) {
         setAction(destination.kind);
       } else if (actionTime > .3) {
         setAction('groom');
       }
     }
-    if (action !== 'walk') {
+    if (action === 'eat') {
+      const duration = 3;
+      amount = Math.max(0,Math.min(1,actionTime*4,(duration-actionTime)*4));
+      heading = meal.angle;
+      headTilt = (.64 + Math.sin(actionTime*13)*.085)*amount;
+      bob = -.16 * amount;
+      pellets.forEach((pellet,index) => { pellet.visible = index >= Math.floor(actionTime / duration * pellets.length); });
+      if (actionTime >= duration) {
+        meal = undefined;
+        bowl.visible = false;
+        if (mealQueue.length) serveMeal();
+        else {
+          chooseDestination();
+          setAction('walk');
+        }
+      }
+    } else if (action !== 'walk') {
       const duration = action === 'nap' ? 6 : action === 'roll' ? 3.3 : 3.1;
       amount = Math.min(1,actionTime*3,(duration-actionTime)*3);
       amount = Math.max(0,amount);
@@ -561,6 +637,8 @@ function start() {
     body.position.y = bob;
     body.rotation.z = lean;
     head.rotation.x = headTilt;
+    body.rotation.x = action === 'eat' ? .30*amount : 0;
+    head.position.y = .93 - (action === 'eat' ? .26*amount : 0);
     head.rotation.y = walking ? 0 : Math.sin(time*1.3)*.11;
     tail.rotation.y = Math.sin(time*(action === 'nap' ? 1.3 : 3.2))*.32;
     legs.forEach((leg,index) => {
