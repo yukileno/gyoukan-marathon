@@ -698,18 +698,7 @@ function drawCertificate(canvas, {name, start, end, laps}) {
   line('合計 ' + count + ' 周を走り切りました',1110,87,{weight:800,max:1620});
   line('そのがんばりをたたえ、ここに表彰します',1220,54);
   rule(1291,430);
-  line('記録期間　' + japaneseDate(start) + ' ～ ' + japaneseDate(end),1390,43,{max:1500});
-  line('業間マラソン',1510,54,{weight:700,x:center-45});
-  ctx.save();
-  ctx.translate(center+229,1485);
-  ctx.rotate(-.10);
-  ctx.strokeStyle = '#a83728';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(-38,-38,76,76);
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(-31,-31,62,62);
-  line('業間',12,24,{color:'#a83728',weight:800,x:0,max:57});
-  ctx.restore();
+  line('記録期間　' + japaneseDate(start) + ' ～ ' + japaneseDate(end),1434,46,{max:1500});
 }
 
 el('form').onsubmit = event => {
