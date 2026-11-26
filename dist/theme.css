@@ -138,3 +138,9 @@ input,select { color: var(--ink); background: #fffdfc; border-color: #c494ad; }
 .preview-banner{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;scroll-margin-top:64px}
 .teacher-preview{margin:12px 0 0}.teacher-preview p{margin:.5em 0 0}
 @media print{.preview-banner{display:none!important}}
+
+#decorate{padding:10px 12px;margin:8px 0;background:#fbecf3;border:1px solid #edc4d6;border-radius:12px;align-items:end}
+#decorate label{flex:1 1 155px;min-width:0;font-weight:750}
+#decorate select{margin-top:4px}
+#furnitureHint{flex-basis:100%}
+#furnitureHint:empty{display:none}

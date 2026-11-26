@@ -64,6 +64,7 @@ body{padding-bottom:52px}.teacher-open{position:fixed;bottom:max(12px,env(safe-a
 <section id="room">
 <div class="room-heading"><div><p class="eyebrow">ねこの部屋</p><h2 id="petName">こはく</h2></div><button id="rename" class="quiet" aria-expanded="false" aria-controls="nameForm">名前をつける</button></div>
 <form id="nameForm" class="row" hidden><label>ねこの名前<input id="nameInput" maxlength="16" required></label><button>名前を保存</button><button type="button" id="nameCancel" class="quiet">キャンセル</button></form>
+<div id="decorate" class="row" hidden><label>家具を動かす<select id="furnitureSelect"><option value="">家具を選ぶ</option></select></label><button id="furnitureTurn" class="quiet" disabled>家具を回す</button><span id="furnitureHint"></span></div>
 <div id="scene">
 <span class="cat-placeholder" role="img" aria-label="ねこ">🐈</span>
 <div class="level-chip"><span id="catLevel"></span><strong id="catStage"></strong></div>
@@ -71,7 +72,6 @@ body{padding-bottom:52px}.teacher-open{position:fixed;bottom:max(12px,env(safe-a
 <p id="catActivity" class="cat-activity"></p>
 <p id="roomMode">ドラッグで視点を回せます。ピンチやホイールで拡大・縮小できます。</p>
 <div id="catControls" class="row" hidden><button id="catMotion" class="quiet">動きを止める</button><button id="catFocus" class="quiet">ねこに寄る</button><button id="catReset" class="quiet">視点をもどす</button></div>
-<div id="decorate" class="row" hidden><label>家具を選ぶ<select id="furnitureSelect"><option value="">家具を選ぶ</option></select></label><button id="furnitureTurn" class="quiet" disabled>家具を回す</button><span id="furnitureHint"></span></div>
 <div class="growth"><p id="catGoal"></p><progress id="catProgress" aria-label="次の進化までの成長ポイント"></progress></div>
 <p id="catStatus" role="status"></p>
 </section>
@@ -179,12 +179,14 @@ try {
 } catch {
   setError('猫のデータを読み込めませんでした。');
 }
+const finalEvolutionXp = 117;
 const stages = [
-  {xp:0, name:'子ねこ'},
-  {xp:3, name:'わんぱくねこ'},
-  {xp:9, name:'たてがみねこ'},
-  {xp:18, name:'オーラライオン'}
-];
+  '子ねこ', 'わんぱくねこ', 'しま尾ねこ', '銀毛ねこ', 'たてがみねこ',
+  '若獅子', '黄金ライオン', '炎のたてがみライオン', '黒たてがみライオン', 'オーラライオン', 'デビルライオン'
+].map((name, index, names) => ({
+  xp:Math.round(index * finalEvolutionXp / (names.length - 1)),
+  name
+}));
 const growth = () => foods.reduce((xp, food) => xp + food.xp * (game.fed[food.id] || 0), 0);
 const stageIndex = xp => stages.findLastIndex(stage => xp >= stage.xp);
 const balance = (laps = sum(dates())) => laps * 10 - costOf(foods, game.fed) - costOf(furniture, game.owned);
@@ -220,8 +222,10 @@ function renderCat() {
   if (next) {
     el('catProgress').max = next.xp - stage.xp;
     el('catProgress').value = xp - stage.xp;
+    el('catGoal').textContent = '次の進化まであと ' + (next.xp - xp) + ' pt';
+  } else {
+    el('catGoal').textContent = '最終進化！ エサでさらに少しずつ育ちます。';
   }
-  el('catGoal').textContent = next ? '次の進化まであと ' + (next.xp - xp) + ' pt' : '最終進化！ エサでさらに少しずつ育ちます。';
   document.dispatchEvent(new CustomEvent('marathon-cat-update', {detail:{xp, index, owned:game.owned, poses:game.poses, furniture}}));
 }
 function buy(item, isFood) {

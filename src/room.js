@@ -6,6 +6,20 @@ import {MTLLoader} from 'three/addons/loaders/MTLLoader.js';
 const sceneBox = document.getElementById('scene');
 const stageMessage = document.getElementById('roomMode');
 
+const forms = [
+  {size:.76, fur:'#df8645', mark:'#a94f2b', tip:'#fff2d9'},
+  {size:.86, fur:'#dc6840', mark:'#92391e', tip:'#fff2d9'},
+  {size:.94, fur:'#c67945', mark:'#62341f', tip:'#62341f', bands:3},
+  {size:1.01, fur:'#9caabf', mark:'#485368', tip:'#e5edfb', bands:5},
+  {size:1.08, fur:'#ad7353', mark:'#593728', tip:'#593728', bands:4, mane:.72, maneColor:'#a64a29'},
+  {size:1.16, fur:'#c58b51', mark:'#6d4124', tip:'#6d4124', bands:2, mane:.92, maneColor:'#8d492a', tuft:1, face:.25},
+  {size:1.23, fur:'#e4ac4b', mark:'#753c20', tip:'#9a531f', mane:1.07, maneColor:'#c07924', tuft:1.18, face:.42},
+  {size:1.31, fur:'#d48545', mark:'#723522', tip:'#9d3920', mane:1.22, maneColor:'#a83720', tuft:1.3, face:.56},
+  {size:1.38, fur:'#b88250', mark:'#392920', tip:'#32221e', mane:1.36, maneColor:'#38231d', tuft:1.42, face:.7},
+  {size:1.45, fur:'#e2a75b', mark:'#623722', tip:'#623722', mane:1.49, maneColor:'#5f3221', tuft:1.55, face:.85, aura:true},
+  {size:1.53, fur:'#49305f', faceColor:'#964dd5', mark:'#321740', tip:'#291336', mane:1.65, maneColor:'#29153f', tuft:1.7, face:1, aura:true}
+];
+
 function start() {
   const renderer = new THREE.WebGLRenderer({antialias: true});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
@@ -42,7 +56,8 @@ function start() {
   world.add(fill);
 
   function mesh(parent, geometry, color, x, y, z) {
-    const part = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({color, roughness: .88}));
+    const material = color instanceof THREE.Material ? color : new THREE.MeshStandardMaterial({color, roughness: .88});
+    const part = new THREE.Mesh(geometry, material);
     part.position.set(x, y, z);
     parent.add(part);
     return part;
@@ -120,18 +135,30 @@ function start() {
   const body = new THREE.Group();
   world.add(cat);
   cat.add(body);
-  const ginger = '#df8645';
-  const stripe = '#a94f2b';
+  const fur = new THREE.MeshStandardMaterial({color:forms[0].fur, roughness:.88});
+  const faceFur = new THREE.MeshStandardMaterial({color:forms[0].fur, roughness:.88});
+  const stripe = new THREE.MeshStandardMaterial({color:forms[0].mark, roughness:.88});
+  const tailColor = new THREE.MeshStandardMaterial({color:forms[0].tip, roughness:.88});
   const cream = '#fff2d9';
-  oval(body, ginger, 0, .59, -.18, .37, .35, .65);
+  const torso = oval(body, fur, 0, .59, -.18, .37, .35, .65);
   oval(body, cream, 0, .44, .27, .29, .25, .27);
   const head = new THREE.Group();
   head.position.set(0, .93, .47);
   body.add(head);
-  oval(head, ginger, 0, 0, 0, .46, .39, .37);
-  const eyes = [];
+  oval(head, faceFur, 0, 0, 0, .46, .39, .37);
+  const horns = new THREE.Group();
+  head.add(horns);
   for (const side of [-1, 1]) {
-    const ear = mesh(head, new THREE.ConeGeometry(.19, .43, 4), ginger, side * .28, .34, -.045);
+    const horn = mesh(horns, new THREE.ConeGeometry(.135, .61, 12), '#c34376', side * .34, .49, .15);
+    horn.rotation.z = -side * .38;
+  }
+  const eyes = [];
+  const fierceFace = new THREE.Group();
+  head.add(fierceFace);
+  const mouth = oval(fierceFace, '#301b1b', 0, -.235, .329, .234, .135, .098);
+  const brows = [];
+  for (const side of [-1, 1]) {
+    const ear = mesh(head, new THREE.ConeGeometry(.19, .43, 4), fur, side * .28, .34, -.045);
     ear.rotation.y = Math.PI / 4;
     ear.rotation.z = -side * .17;
     const inner = mesh(head, new THREE.ConeGeometry(.105, .25, 4), '#eeaca1', side * .30, .35, .043);
@@ -143,6 +170,14 @@ function start() {
     eyes.push(eye);
     oval(eye, '#304136', 0, 0, 0, .057, .078, .027);
     oval(eye, '#ffffff', -.016, .025, .025, .016, .018, .009);
+    const brow = oval(fierceFace, stripe, side * .188, .1, .363, .091, .022, .038);
+    brow.rotation.z = side * .45;
+    brows.push(brow);
+    oval(fierceFace, '#e8a333', side * .185, .032, .369, .05, .034, .02);
+    oval(fierceFace, '#241915', side * .185, .032, .387, .017, .031, .009);
+    const fang = mesh(fierceFace, new THREE.ConeGeometry(.039, .138, 12), '#fff4db', side * .152, -.232, .411);
+    fang.rotation.z = Math.PI - side * .16;
+    mesh(fierceFace, new THREE.ConeGeometry(.024, .074, 10), '#fff4db', side * .098, -.316, .392);
     for (let i=0; i<2; i++) {
       const whisker = oval(head, '#845f48', side * .34, -.115 - i * .052, .30, .20, .009, .009);
       whisker.rotation.z = side * (.12 - i * .20);
@@ -154,13 +189,24 @@ function start() {
     mark.rotation.x = -.48;
   }
   const legs = [];
+  const paws = [];
   for (const z of [-.55, .23]) {
     for (const side of [-1, 1]) {
       const joint = new THREE.Group();
       joint.position.set(side * .24, .45, z);
       body.add(joint);
-      oval(joint, ginger, 0, -.16, 0, .108, .23, .12);
-      oval(joint, cream, 0, -.345, .04, .12, .084, .154);
+      oval(joint, fur, 0, -.16, 0, .108, .23, .12);
+      const paw = new THREE.Group();
+      paw.position.set(0, -.345, .04);
+      joint.add(paw);
+      oval(paw, cream, 0, 0, 0, .12, .084, .154);
+      const claws = new THREE.Group();
+      paw.add(claws);
+      for (const x of [-.063, 0, .063]) {
+        const claw = mesh(claws, new THREE.ConeGeometry(.021, .067, 9), '#fff2d9', x, -.02, .147);
+        claw.rotation.x = Math.PI / 2;
+      }
+      paws.push({paw, claws});
       legs.push(joint);
     }
   }
@@ -171,16 +217,42 @@ function start() {
     new THREE.Vector3(0,0,0), new THREE.Vector3(0,.22,-.29),
     new THREE.Vector3(.05,.58,-.47), new THREE.Vector3(.22,.72,-.59)
   ]);
-  mesh(tail, new THREE.TubeGeometry(curve, 20, .074, 10, false), ginger, 0, 0, 0);
+  mesh(tail, new THREE.TubeGeometry(curve, 32, .074, 12, false), fur, 0, 0, 0);
+  const tailBands = [.32, .59, .82, .45, .71].map(position => {
+    const {x,y,z} = curve.getPointAt(position);
+    const band = mesh(tail, new THREE.TorusGeometry(.073, .019, 8, 18), stripe, x, y, z);
+    band.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), curve.getTangentAt(position));
+    return band;
+  });
   const tip = curve.getPoint(1);
-  oval(tail, cream, tip.x, tip.y, tip.z, .078, .078, .078);
+  const tailTip = oval(tail, tailColor, tip.x, tip.y, tip.z, .078, .078, .078);
+  const tailTuft = oval(tail, tailColor, tip.x + .036, tip.y + .02, tip.z - .015, .10, .17, .105);
+  tailTuft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), curve.getTangent(1));
 
   const mane = new THREE.Group();
   head.add(mane);
+  const maneColors = Array.from({length:2}, () => new THREE.MeshStandardMaterial({roughness:.96}));
   for (let i = 0; i < 11; i++) {
     const angle = i * Math.PI * 2 / 11;
-    const tuft = oval(mane, i % 2 ? '#9c4529' : '#bd5426', Math.cos(angle)*.38, Math.sin(angle)*.36-.04, -.1, .15,.24,.21);
+    const tuft = oval(mane, maneColors[i % 2], Math.cos(angle)*.38, Math.sin(angle)*.36-.04, -.13, .17,.26,.23);
     tuft.rotation.z = angle - Math.PI/2;
+  }
+  const manePoints = new THREE.Group();
+  mane.add(manePoints);
+  for (let i = 0; i < 11; i++) {
+    const angle = (i + .5) * Math.PI * 2 / 11;
+    const lock = mesh(manePoints, new THREE.ConeGeometry(.139, .41, 7), maneColors[i % 2],
+      Math.cos(angle)*.47, Math.sin(angle)*.43-.04, -.23);
+    lock.rotation.z = angle - Math.PI/2;
+  }
+  const neckRuff = new THREE.Group();
+  body.add(neckRuff);
+  neckRuff.position.set(0, .7, .2);
+  for (const side of [-1, 1]) {
+    for (let i=0; i<4; i++) {
+      const lock = oval(neckRuff, maneColors[i % 2], side * (.39 - i * .105), .16 - i * .085, .13, .17, .32, .23);
+      lock.rotation.z = side * (.52 - i * .12);
+    }
   }
   const aura = new THREE.Group();
   cat.add(aura);
@@ -203,7 +275,43 @@ function start() {
   const gold = new THREE.PointLight('#ffc15e',3.2,4,1.4);
   gold.position.set(0,.65,.3);
   aura.add(gold);
-  let evolution = 0;
+
+  function applyForm(form, xp) {
+    const {bands = 0, mane: maneSize = 0, tuft = 0, face = 0} = form;
+    fur.color.set(form.fur);
+    faceFur.color.set(form.faceColor ?? form.fur);
+    horns.visible = face === 1;
+    stripe.color.set(form.mark);
+    tailColor.color.set(form.tip);
+    tailBands.forEach((band, i) => { band.visible = i < bands; });
+    tailTip.visible = !tuft;
+    tailTuft.visible = tuft > 0;
+    tailTuft.scale.set(.10 * tuft, .17 * tuft, .105 * tuft);
+    mane.visible = maneSize > 0;
+    mane.scale.set(maneSize, maneSize, .65 + .35 * maneSize);
+    manePoints.visible = face === 1;
+    neckRuff.visible = face >= .56;
+    neckRuff.scale.setScalar(.55 + .45 * face);
+    if (mane.visible) {
+      maneColors[0].color.set(form.maneColor);
+      maneColors[1].color.copy(maneColors[0].color).multiplyScalar(.60);
+    }
+    torso.scale.set(.37 + .11 * face, .35 + .045 * face, .65 + .09 * face);
+    head.scale.set(1 + .12 * face, 1, 1 + .05 * face);
+    fierceFace.visible = face >= .56;
+    eyes.forEach(eye => { eye.visible = !fierceFace.visible; });
+    mouth.scale.y = .085 + .05 * face;
+    brows.forEach((brow, i) => { brow.rotation.z = (i * 2 - 1) * (.2 + .3 * face); });
+    paws.forEach(({paw, claws}) => {
+      paw.scale.set(1 + .28 * face, 1, 1 + .18 * face);
+      claws.visible = face === 1;
+    });
+    aura.visible = !!form.aura;
+    glow.color.set(face === 1 ? '#db8bff' : '#ffe386');
+    haloMaterial.color.set(face === 1 ? '#ac49ee' : '#ffc061');
+    gold.color.set(face === 1 ? '#be65ff' : '#ffc15e');
+    desiredSize = form.size + .3 * (xp / (xp + 25));
+  }
 
   const furnitureSlots = {
     rugRound: [0,.5,0], sideTable: [-2.8,-2.6,0],
@@ -470,8 +578,6 @@ function start() {
     lastFrame = now;
     if (moving) updateCat(dt);
     size = moving ? THREE.MathUtils.lerp(size,desiredSize,Math.min(1,dt*5)) : desiredSize;
-    mane.visible = evolution >= 2;
-    aura.visible = evolution >= 3;
     if (aura.visible) {
       halo.scale.setScalar(1 + Math.sin(time*4)*.09);
       stars.forEach((star,i) => {
@@ -487,7 +593,8 @@ function start() {
     shadow.position.set(cat.position.x,.037,cat.position.z);
     shadow.scale.set(.51*size,.77*size,1);
     if (following) {
-      cameraShift.set(cat.position.x - orbit.target.x, 0, cat.position.z - orbit.target.z);
+      const focusHeight = .65 + Math.max(0, size - 1) * .55;
+      cameraShift.set(cat.position.x - orbit.target.x, focusHeight - orbit.target.y, cat.position.z - orbit.target.z);
       camera.position.add(cameraShift);
       orbit.target.add(cameraShift);
     }
@@ -501,8 +608,7 @@ function start() {
   }
 
   document.addEventListener('marathon-cat-update', ({detail:{xp,index,owned,poses,furniture}}) => {
-    evolution = index;
-    desiredSize = [.76,.94,1.19,1.42][index] + .3 * (xp / (xp + 25));
+    applyForm(forms[index], xp);
     savedPoses = poses;
     furniture.forEach(({id,name},i) => {
       furnitureNames[id] = name;
@@ -545,12 +651,13 @@ function start() {
   };
   updateMotionButton();
   document.getElementById('catFocus').onclick = () => {
-    const offset = new THREE.Vector3().subVectors(camera.position,orbit.target).setLength(7.4);
+    const distance = 7.4 + Math.max(0, desiredSize - 1) * 3.2;
+    const offset = new THREE.Vector3().subVectors(camera.position,orbit.target).setLength(distance);
     orbit.target.set(cat.position.x,.65,cat.position.z);
     camera.position.copy(orbit.target).add(offset);
     following = true;
     orbit.update();
-    draw();
+    refresh();
   };
   document.getElementById('catReset').onclick = () => {
     following = false;
