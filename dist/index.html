@@ -64,6 +64,7 @@ body{padding-bottom:52px}.teacher-open{position:fixed;bottom:max(12px,env(safe-a
 <span class="cat-placeholder" role="img" aria-label="ねこ">🐈</span>
 <div class="level-chip"><span id="catLevel"></span><strong id="catStage"></strong></div>
 </div>
+<p id="catActivity" class="cat-activity"></p>
 <p id="roomMode">ドラッグで視点を回せます。ピンチやホイールで拡大・縮小できます。</p>
 <div id="catControls" class="row" hidden><button id="catMotion" class="quiet">動きを止める</button><button id="catFocus" class="quiet">ねこに寄る</button><button id="catReset" class="quiet">視点をもどす</button></div>
 <div id="decorate" class="row" hidden><label>家具を選ぶ<select id="furnitureSelect"><option value="">家具を選ぶ</option></select></label><button id="furnitureTurn" class="quiet" disabled>家具を回す</button><span id="furnitureHint"></span></div>
@@ -127,7 +128,7 @@ const foods = [
   {id:'feast', name:'ごちそうチキン', cost:70, xp:6},
   {id:'salmon', name:'サーモンプレート', cost:55, xp:5},
   {id:'royal', name:'黄金のごちそう', cost:100, xp:9}
-];
+].sort((first,second) => first.xp - second.xp);
 const furniture = [
   {id:'rugRound', name:'まるいラグ', cost:30, category:'小物'},
   {id:'sideTable', name:'木のテーブル', cost:40, category:'机・収納'},

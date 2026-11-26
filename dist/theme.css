@@ -131,3 +131,5 @@ input,select { color: var(--ink); background: #fffdfc; border-color: #c494ad; }
   main { padding-top: 0; }
   section { box-shadow: none; }
 }
+
+.cat-activity{margin:.65em 0 0;color:#86436a;font-weight:800}.cat-activity:empty{display:none}

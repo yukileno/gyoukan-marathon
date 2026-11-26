@@ -298,7 +298,6 @@ function start() {
   });
 
   let target = new THREE.Vector3(1.9, 0, .9);
-  let pause = 0;
   let time = 0;
   let gait = 0;
   let size = .76;
@@ -317,64 +316,158 @@ function start() {
     left.visible = camera.position.x > -edge;
     renderer.render(world, camera);
   };
+  const activity = document.getElementById('catActivity');
+  const furnitureActions = new Map([
+    ['rugRound','roll'], ['rugRounded','roll'],
+    ['bedSingle','nap'], ['bedDouble','nap'], ['loungeSofa','nap'],
+    ['loungeSofaCorner','nap'], ['benchCushion','nap']
+  ]);
+  const labels = {walk:'おさんぽ中', groom:'毛づくろい中', roll:'ラグでごろん', nap:'お昼寝中'};
+  let action = 'walk';
+  let actionTime = 0;
+  let outing = 0;
+  let nextFurniture = 0;
+  let destination;
+  const hopRay = new THREE.Raycaster(new THREE.Vector3(),new THREE.Vector3(0,-1,0));
+
+  function setAction(next) {
+    if (action !== next || !activity.textContent) activity.textContent = labels[next];
+    action = next;
+    actionTime = 0;
+  }
+  function canWalkTo(x,z,ignore) {
+    const sx = cat.position.x;
+    const sz = cat.position.z;
+    return ![...furnitureBounds].some(([id,bounds]) => {
+      if (id === ignore) return false;
+      const inside = (px,pz) => px >= bounds.min.x && px <= bounds.max.x && pz >= bounds.min.z && pz <= bounds.max.z;
+      if (inside(sx,sz)) return inside(x,z);
+      for (let i = 1; i <= 16; i++) {
+        if (inside(THREE.MathUtils.lerp(sx,x,i/16),THREE.MathUtils.lerp(sz,z,i/16))) return true;
+      }
+      return false;
+    });
+  }
   function chooseDestination() {
     const limit = edge - 1.5;
+    target.copy(cat.position);
     for (let attempt = 0; attempt < 18; attempt++) {
       const x = (Math.random() * 2 - 1) * limit;
       const z = (Math.random() * 2 - 1) * limit;
-      const sx = cat.position.x;
-      const sz = cat.position.z;
-      if (Math.hypot(x-sx,z-sz) < 1.7) continue;
-      const blocked = [...furnitureBounds.values()].some(bounds => {
-        const inside = (px,pz) => px >= bounds.min.x && px <= bounds.max.x && pz >= bounds.min.z && pz <= bounds.max.z;
-        if (inside(sx,sz)) return inside(x,z);
-        for (let i = 1; i <= 16; i++) {
-          if (inside(THREE.MathUtils.lerp(sx,x,i/16),THREE.MathUtils.lerp(sz,z,i/16))) return true;
-        }
-        return false;
-      });
-      if (!blocked) {
+      if (Math.hypot(x-cat.position.x,z-cat.position.z) >= 1.7 && canWalkTo(x,z)) {
         target.set(x,0,z);
-        return;
+        break;
       }
     }
   }
+  function visitFurniture() {
+    const options = [...furnitureActions].filter(([id]) => models.has(id));
+    for (let i=0;i<options.length;i++) {
+      const [id,kind] = options[nextFurniture++ % options.length];
+      const model = models.get(id);
+      const x = model.position.x;
+      const z = model.position.z;
+      if (!canWalkTo(x,z,id)) continue;
+      const elevation = kind === 'nap' ? furnitureBounds.get(id)?.max.y || 0 : 0;
+      if (kind === 'nap') {
+        hopRay.ray.origin.set(x,elevation+1,z);
+        const hit = hopRay.intersectObject(model,true)[0];
+        if (!hit) continue;
+        destination = {id,kind,x,z,height:hit.point.y+.065,angle:model.rotation.y};
+      } else destination = {id,kind,x,z,height:.10,angle:heading};
+      target.set(x,0,z);
+      return true;
+    }
+    return false;
+  }
+  function updateCat(dt) {
+    time += dt;
+    actionTime += dt;
+    let walking = false;
+    let lift = 0;
+    let bob = 0;
+    let lean = 0;
+    let headTilt = 0;
+    let paw = 0;
+    let amount = 0;
+    if (destination) {
+      const model = models.get(destination.id);
+      if (model.position.x !== destination.x || model.position.z !== destination.z ||
+          (destination.kind === 'nap' && model.rotation.y !== destination.angle)) {
+        destination = undefined;
+        chooseDestination();
+        setAction('walk');
+      }
+    }
+    if (action === 'walk') {
+      const dx = target.x - cat.position.x;
+      const dz = target.z - cat.position.z;
+      const distance = Math.hypot(dx,dz);
+      if (distance > .09) {
+        const angle = Math.atan2(dx,dz);
+        heading += Math.atan2(Math.sin(angle-heading),Math.cos(angle-heading)) * Math.min(1,dt*7);
+        const step = Math.min(distance,dt*1.37);
+        cat.position.x += dx / distance * step;
+        cat.position.z += dz / distance * step;
+        gait += dt*12;
+        walking = true;
+        bob = Math.abs(Math.sin(gait))*.048;
+        if (destination?.kind === 'nap') {
+          lift = destination.height * THREE.MathUtils.smoothstep(1.2 - distance,0,1.2);
+        }
+      } else if (destination) {
+        setAction(destination.kind);
+      } else if (actionTime > .3) {
+        setAction('groom');
+      }
+    }
+    if (action !== 'walk') {
+      const duration = action === 'nap' ? 6 : action === 'roll' ? 3.3 : 3.1;
+      amount = Math.min(1,actionTime*3,(duration-actionTime)*3);
+      amount = Math.max(0,amount);
+      if (action === 'groom') {
+        headTilt = (.28 + Math.sin(actionTime*10)*.15)*amount;
+        paw = -1.05*amount;
+        bob = -.09*amount;
+      } else if (action === 'roll') {
+        lean = Math.sin(actionTime*4)*.58*amount;
+        lift = destination.height;
+        bob = -.16*amount;
+      } else {
+        lean = .76*amount;
+        bob = -.23*amount + Math.sin(actionTime*3)*.022;
+        lift = destination.height * Math.min(1,(duration-actionTime)*3);
+        heading = destination.angle;
+      }
+      if (actionTime >= duration) {
+        const onFurniture = Boolean(destination);
+        destination = undefined;
+        setAction('walk');
+        outing += 1;
+        if (onFurniture || outing % 2 === 0 || !visitFurniture()) chooseDestination();
+      }
+    }
+    cat.position.y = Math.max(0,lift);
+    cat.rotation.y = heading;
+    body.position.y = bob;
+    body.rotation.z = lean;
+    head.rotation.x = headTilt;
+    head.rotation.y = walking ? 0 : Math.sin(time*1.3)*.11;
+    tail.rotation.y = Math.sin(time*(action === 'nap' ? 1.3 : 3.2))*.32;
+    legs.forEach((leg,index) => {
+      const swing = walking ? Math.sin(gait + (index === 0 || index === 3 ? 0 : Math.PI))*.42 :
+        index === 2 ? paw : 0;
+      leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x,swing,Math.min(1,dt*16));
+    });
+    eyes.forEach(eye => { eye.scale.y = action === 'nap' || time % 5 > 4.86 ? .16 : 1; });
+  }
+  setAction('walk');
 
   function animate(now) {
     frame = 0;
     const dt = Math.min((now - (lastFrame ?? now)) / 1000, .05);
     lastFrame = now;
-    if (moving) {
-      time += dt;
-      const dx = target.x - cat.position.x;
-      const dz = target.z - cat.position.z;
-      const distance = Math.hypot(dx,dz);
-      let walking = 0;
-      if (distance > .1) {
-        const angle = Math.atan2(dx,dz);
-        heading += Math.atan2(Math.sin(angle-heading), Math.cos(angle-heading)) * Math.min(1,dt*6);
-        const step = Math.min(distance,dt*1.37);
-        cat.position.x += Math.sin(heading) * step;
-        cat.position.z += Math.cos(heading) * step;
-        gait += dt * 12;
-        walking = 1;
-      } else {
-        pause += dt;
-        if (pause > 1.35) {
-          chooseDestination();
-          pause = 0;
-        }
-      }
-      cat.rotation.y = heading;
-      legs.forEach((leg, index) => {
-        const swing = Math.sin(gait + ([0,3].includes(index) ? 0 : Math.PI)) * .42 * walking;
-        leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x,swing,Math.min(1,dt*16));
-      });
-      body.position.y = Math.abs(Math.sin(gait)) * .048 * walking;
-      tail.rotation.y = Math.sin(time * 3.2) * .32;
-      head.rotation.y = Math.sin(time * 1.3) * .13 * (1-walking);
-      eyes.forEach(eye => { eye.scale.y = time % 5 > 4.86 ? .16 : 1; });
-    }
+    if (moving) updateCat(dt);
     size = moving ? THREE.MathUtils.lerp(size,desiredSize,Math.min(1,dt*5)) : desiredSize;
     mane.visible = evolution >= 2;
     aura.visible = evolution >= 3;
@@ -424,7 +517,7 @@ function start() {
     if (!moving || !frame) refresh();
   });
   function updateMotionButton() {
-    toggle.textContent = moving ? '動きを止める' : '歩かせる';
+    toggle.textContent = moving ? '動きを止める' : '動かす';
   }
   toggle.onclick = () => {
     moving = !moving;
