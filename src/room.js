@@ -33,7 +33,7 @@ function start() {
   const orbit = new OrbitControls(camera, surface);
   orbit.target.set(0, .35, 0);
   orbit.enablePan = false;
-  orbit.minDistance = 7;
+  orbit.minDistance = 3.6;
   orbit.maxDistance = 43;
   orbit.minPolarAngle = .3;
   orbit.maxPolarAngle = 1.34;
@@ -139,7 +139,35 @@ function start() {
   const faceFur = new THREE.MeshStandardMaterial({color:forms[0].fur, roughness:.88});
   const stripe = new THREE.MeshStandardMaterial({color:forms[0].mark, roughness:.88});
   const tailColor = new THREE.MeshStandardMaterial({color:forms[0].tip, roughness:.88});
-  const cream = '#fff2d9';
+  const cream = new THREE.MeshStandardMaterial({color:'#fff2d9',roughness:.88});
+  const coatMaterials = [fur,faceFur,cream,stripe,tailColor];
+  let kittenCoat;
+  let kittenBump;
+  let coatRequested = false;
+  let kittenActive = true;
+
+  function updateKittenCoat() {
+    if (kittenActive && !coatRequested) {
+      coatRequested = true;
+      new THREE.TextureLoader().load('art/kitten-coat.webp', texture => {
+        texture.anisotropy = Math.min(8,renderer.capabilities.getMaxAnisotropy());
+        kittenBump = texture.clone();
+        texture.colorSpace = THREE.SRGBColorSpace;
+        kittenCoat = texture;
+        updateKittenCoat();
+        draw();
+      });
+    }
+    const map = kittenActive ? kittenCoat ?? null : null;
+    const bump = kittenActive ? kittenBump ?? null : null;
+    for (const material of coatMaterials) {
+      if (material.map === map && material.bumpMap === bump) continue;
+      material.map = map;
+      material.bumpMap = bump;
+      material.bumpScale = .024;
+      material.needsUpdate = true;
+    }
+  }
   const torso = oval(body, fur, 0, .59, -.18, .37, .35, .65);
   oval(body, cream, 0, .44, .27, .29, .25, .27);
   const head = new THREE.Group();
@@ -277,6 +305,8 @@ function start() {
   aura.add(gold);
 
   function applyForm(form, xp) {
+    kittenActive = form === forms[0];
+    updateKittenCoat();
     const {bands = 0, mane: maneSize = 0, tuft = 0, face = 0} = form;
     fur.color.set(form.fur);
     faceFur.color.set(form.faceColor ?? form.fur);
@@ -729,7 +759,7 @@ function start() {
   };
   updateMotionButton();
   document.getElementById('catFocus').onclick = () => {
-    const distance = 7.4 + Math.max(0, desiredSize - 1) * 3.2;
+    const distance = kittenActive ? 3.85 : 7.4 + Math.max(0, desiredSize - 1) * 3.2;
     const offset = new THREE.Vector3().subVectors(camera.position,orbit.target).setLength(distance);
     orbit.target.set(cat.position.x,.65,cat.position.z);
     camera.position.copy(orbit.target).add(offset);

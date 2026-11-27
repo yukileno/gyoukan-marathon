@@ -22,3 +22,8 @@ ChatGPTの組み込み画像生成を使用。エサのスプライトシート�
 ## 肉球の飾り
 
 > One isolated decorative cutout sticker asset for a premium cheerful Japanese cozy cat raising game, transparent background, centered paw portrait medallion: a cream and coral pink cat paw pad with a delicate pale golden ring around it, two mint leaves and a small wisteria flower at bottom. Whimsical soft hand painted picture-book style, precise, bright warm cream and coral pastel palette, clean smooth shape, no text or numbers, minimal shadow, ample transparent margin on all sides. Square asset.
+
+
+## 子ねこの短毛
+
+> Square seamless tiling material sample for a 3D game's young domestic shorthair cat. Orthographic macro albedo texture of very short dense fine cat fur, millions of tiny fine hair strands gently flowing in the same vertical direction. Pale warm off-white and light gray, low contrast so it can be tinted ginger in a renderer. Hair grouping subtly visible at macro scale. No animal face or body outline, no stripes or spots, no objects, no text, no directional shadows, no specular lighting, flat evenly lit diffuse texture. Edge-to-edge seamless material, consistent at borders.
