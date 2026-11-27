@@ -9,3 +9,5 @@
 GitHub Actionsは `main` の `dist/` をGitHub Pagesに公開します。
 
 家具のモデルと画像は [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) のCC0素材です。同梱の利用条件は `dist/furniture/License.txt` にあります。エサと床の画像はChatGPTの画像生成で作成しました。
+
+子ねこから銀毛ねこまでのGLBとアニメーションは [Vuena Cute Pets & Wildlife FREE Sample](https://vuena.itch.io/blocky-pets-free) のCC0素材です。同梱の利用条件は `dist/models/LICENSE.txt` にあります。

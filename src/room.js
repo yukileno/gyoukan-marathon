@@ -1,3 +1,4 @@
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {OBJLoader} from 'three/addons/loaders/OBJLoader.js';
@@ -454,10 +455,72 @@ function start() {
   let destination;
   const hopRay = new THREE.Raycaster(new THREE.Vector3(),new THREE.Vector3(0,-1,0));
 
+  const vuenaClips = {walk:'walk',groom:'sit',roll:'sleep',nap:'sleep',eat:'eat'};
+  const vuenaTints = ['#ffffff','#ffd5ba','#e9cbb5','#afbadb'];
+  let vuenaCat;
+  let vuenaMixer;
+  let vuenaActions;
+  let vuenaAction;
+  let vuenaRequested = false;
+
+  function switchVuenaClip() {
+    if (!vuenaCat?.visible) return;
+    const next = vuenaActions.get(moving ? vuenaClips[action] : 'idle');
+    if (!next || next === vuenaAction) return;
+    next.reset().setEffectiveWeight(1).setEffectiveTimeScale(1).play();
+    if (vuenaAction) next.crossFadeFrom(vuenaAction,.18,false);
+    vuenaAction = next;
+    vuenaMixer.update(0);
+  }
+  function syncVuenaCat() {
+    const index = forms.indexOf(currentForm);
+    const useVuena = index >= 0 && index < vuenaTints.length;
+    if (useVuena && !vuenaRequested) {
+      vuenaRequested = true;
+      new GLTFLoader().loadAsync('models/GLB/animal_cat.glb').then(({scene,animations}) => {
+        scene.scale.setScalar(2.35);
+        const detailed = scene.getObjectByName('cat_LOD0');
+        const mobile = scene.getObjectByName('cat_LOD1');
+        if (detailed && mobile) detailed.visible = false;
+        scene.traverse(part => {
+          if (!part.isMesh) return;
+          part.castShadow = true;
+          part.frustumCulled = false;
+          part.material.color.set('#ffffff');
+        });
+        vuenaCat = scene;
+        cat.add(vuenaCat);
+        vuenaMixer = new THREE.AnimationMixer(vuenaCat);
+        vuenaActions = new Map(animations.map(clip => [clip.name,vuenaMixer.clipAction(clip)]));
+        syncVuenaCat();
+        if (!moving || !frame) refresh();
+      }).catch(() => {
+        // The built-in character is already visible if the optional model fails to load.
+      });
+    }
+    if (!vuenaCat) return;
+    vuenaCat.visible = useVuena;
+    body.visible = !useVuena;
+    if (useVuena) {
+      vuenaCat.traverse(part => {
+        if (part.isMesh) part.material.color.set(vuenaTints[index]);
+      });
+      switchVuenaClip();
+    } else {
+      vuenaMixer.stopAllAction();
+      vuenaAction = undefined;
+    }
+    activity.textContent = activityLabel(action);
+  }
+  function activityLabel(next) {
+    return next === 'groom' && vuenaCat?.visible ? 'ひと休み中' : labels[next];
+  }
+
   function setAction(next) {
-    if (action !== next || !activity.textContent) activity.textContent = labels[next];
+    if (action !== next || !activity.textContent) activity.textContent = activityLabel(next);
     action = next;
     actionTime = 0;
+    switchVuenaClip();
   }
   function canWalkTo(x,z,ignore) {
     const sx = cat.position.x;
@@ -533,7 +596,7 @@ function start() {
     const angle = heading + (forward ?? 0);
     const distance = forward === undefined ? 0 : 1.45;
     target.set(cat.position.x + Math.sin(angle)*distance,0,cat.position.z + Math.cos(angle)*distance);
-    const reach = .69 * size + .16;
+    const reach = (vuenaCat?.visible ? .52 : .69) * size + .16;
     bowl.position.set(
       THREE.MathUtils.clamp(target.x + Math.sin(angle)*reach,-edge+.4,edge-.4),0,
       THREE.MathUtils.clamp(target.z + Math.cos(angle)*reach,-edge+.4,edge-.4));
@@ -669,7 +732,10 @@ function start() {
     frame = 0;
     const dt = Math.min((now - (lastFrame ?? now)) / 1000, .05);
     lastFrame = now;
-    if (moving) updateCat(dt);
+    if (moving) {
+      updateCat(dt);
+      if (vuenaCat?.visible) vuenaMixer.update(dt);
+    }
     size = moving ? THREE.MathUtils.lerp(size,desiredSize,Math.min(1,dt*5)) : desiredSize;
     if (aura.visible) {
       halo.scale.setScalar(1 + Math.sin(time*4)*.09);
@@ -702,6 +768,7 @@ function start() {
 
   document.addEventListener('marathon-cat-update', ({detail:{xp,index,owned,poses,furniture}}) => {
     applyForm(forms[index], xp);
+    syncVuenaCat();
     savedPoses = poses;
     furniture.forEach(({id,name},i) => {
       furnitureNames[id] = name;
@@ -739,6 +806,7 @@ function start() {
   }
   toggle.onclick = () => {
     moving = !moving;
+    switchVuenaClip();
     updateMotionButton();
     refresh();
   };
